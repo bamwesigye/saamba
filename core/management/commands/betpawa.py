@@ -17,7 +17,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 
-
+from tqdm import tqdm
 
 from core.models import BetLink, BetpawaBets
 
@@ -29,12 +29,11 @@ class Command(BaseCommand):
         # betpawa.login()
         while True:
             links = BetLink.objects.all().order_by('?')
-            for link in links:
+            for link in tqdm(links, desc="Progress"):
                 self.stdout.write(f"Working on {link.link_url} - {link.league}")
                 betpawa.place_events(link.link_url)
             betpawa.create_code()
-            time.sleep(60*60*24)
-
+            # time.sleep(60*60*24)
 
 
 # Set up Chrome options for headless mode
@@ -51,8 +50,8 @@ class Betpawa:
         self.driver.get("https://betpawa.ug/")
         self.driver.maximize_window()
         self.events_counter = 0
-        self.events_threshold = 30
-        self.over_threshold = 2.5
+        self.events_threshold = 40
+        self.over_threshold = 1.5
         time.sleep(5)
 
     def login(self):
