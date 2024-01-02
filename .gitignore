@@ -1,0 +1,51 @@
+# Byte-compiled / optimized / DLL files
+*__pycache__/*
+*.pyc
+*.pyo
+*.pyd
+
+# Local development settings
+*.sqlite3
+*.db
+*.log
+
+# Media files
+media/
+
+# Static files
+staticfiles/
+
+# Virtual environment
+venv/
+env/
+.venv/
+.vscode/
+
+# IDE-specific files
+*.idea/
+*.vscode/
+
+# Compiled Python files
+*.pyc
+
+# macOS
+.DS_Store
+
+# Editor temporary/backup files
+*~
+
+# Ignore pipenv virtual environment
+Pipfile
+Pipfile.lock
+
+# Ignore local settings
+local_settings.py
+
+# Ignore sensitive information
+*.secret
+*.key
+*.pem
+*.env
+
+# Ignore database migrations
+**/migrations/
