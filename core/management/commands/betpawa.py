@@ -24,8 +24,14 @@ from core.models import BetLink, BetpawaBets
 class Command(BaseCommand):
     help = 'Displays current time'
 
+    def add_arguments(self, parser):
+        parser.add_argument('--events', type=int, default=30, help='Events Threshold')
+        parser.add_argument('--overs', type=float, default=1.5, help='Overs Threshold')
+
     def handle(self, *args, **kwargs):
-        betpawa = Betpawa()
+        events_threshold = kwargs['events']
+        overs_threshold = kwargs['overs']
+        betpawa = Betpawa(events_threshold, overs_threshold)
         # betpawa.login()
         while True:
             links = BetLink.objects.all().order_by('?')
@@ -45,13 +51,13 @@ from .calculate import analyze_goals, get_date_diff
 
 
 class Betpawa:
-    def __init__(self):
+    def __init__(self, events_threshold, over_threshold):
         self.driver = webdriver.Chrome(options= chrome_options, service=ChromeService(ChromeDriverManager().install()))
         self.driver.get("https://betpawa.ug/")
         self.driver.maximize_window()
         self.events_counter = 0
-        self.events_threshold = 40
-        self.over_threshold = 1.5
+        self.events_threshold = events_threshold
+        self.over_threshold = over_threshold
         time.sleep(5)
 
     def login(self):
@@ -71,6 +77,7 @@ class Betpawa:
         for odd in odds:
             # print(odd.text)
             pass
+    
     def place_events(self, link_url):
         self.driver.get(link_url)
         time.sleep(2)
@@ -123,9 +130,9 @@ class Betpawa:
             print(match_particpants)
             match_details = driver.find_element(By.CSS_SELECTOR,'.event-header-details').text
             print(match_details)
-            date_diff = get_date_diff(match_date)
+            date_diff, match_day = get_date_diff(match_date)
             print(match_date,'hours difference = ', date_diff)
-            if date_diff < 7 :
+            if date_diff < 3 :
                 wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".event-statistics-text")))
                 time.sleep(2)    
                 driver.find_element(By.CSS_SELECTOR,".event-statistics-text").click() # change to wait until
@@ -159,22 +166,21 @@ class Betpawa:
                 time.sleep(2)
                 # if average > 1.1:
                 if result > 2.1:
-                    #add to DB
-                    bet = BetpawaBets(event_link='link')
-
-
-
-                    self.bet_place(4)
+                    odds_text = self.bet_place(4)
                     print(f" Over {self.over_threshold} selected, adding 1 to the counter")
+                    bet = BetpawaBets(event_link=driver.current_url, event_match=match_particpants, event_tournament=match_details, selection=odds_text, event_data= str(scores_list))
                     self.events_counter = self.events_counter + 1
                     
                 elif result <-2.1 :
                 # elif average <-1.1 :
-                    self.bet_place(5)
+                    odds_text = self.bet_place(5)
+                    bet = BetpawaBets(event_link=driver.current_url, event_match=match_particpants, event_tournament=match_details, selection=odds_text, event_data= str(scores_list))
                     self.events_counter = self.events_counter + 1
                     print(f" Under {self.over_threshold} selected, adding 1 to the counter")
                 else:
                     print("No Bet Selected, count is still ", self.events_counter)
+
+                bet.save()
             else:
                 print('match is further than 3 days')
         except Exception as e:
@@ -190,22 +196,30 @@ class Betpawa:
             case 4:
                 try:
                     self.driver.find_element(By.CSS_SELECTOR,"[data-test-id='tabs-goals']").click()
-                    time.sleep(4)
-                    self.driver.find_element(By.XPATH,f"//span[contains(text(),'Over ({self.over_threshold})')]").click()
                     time.sleep(2)
+                    odd_select = self.driver.find_element(By.XPATH,f"//span[contains(text(),'Over ({self.over_threshold})')]")
+                    odd_select.click()
+                    time.sleep(1)
+                    odd_text = odd_select.text
+                    
                 except:
                     print("No bet")
             
             case 5:
                 try:
                     self.driver.find_element(By.CSS_SELECTOR,"[data-test-id='tabs-goals']").click()
-                    time.sleep(4)
-                    self.driver.find_element(By.XPATH,f"//span[contains(text(),'Under ({self.over_threshold})')]").click()
                     time.sleep(2)
+                    odd_select = self.driver.find_element(By.XPATH,f"//span[contains(text(),'Under ({self.over_threshold})')]")
+                    odd_select = odd_select.find_element(By.XPATH,"..")
+                    odd_select.click()
+                    time.sleep(1)
+                    odd_text = odd_select.text
                 except:
                     print("No bet")
             case _:
                 print('No work here')
+
+        return odd_text
 
     def create_code(self):
         time.sleep(2)

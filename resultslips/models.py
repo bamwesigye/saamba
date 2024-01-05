@@ -18,7 +18,7 @@ class Startegy(models.Model):
     # def get_absolute_url(self):
     #     return reverse("startegy_detail", kwargs={"pk": self.pk})
 
-class Betslp(models.Model):
+class Betslip(models.Model):
     STATUS_CHOICES = [
         (0, 'Pending'),
         (1, 'Won'),

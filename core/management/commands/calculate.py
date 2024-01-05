@@ -23,7 +23,7 @@ def get_date_diff(date_string='3:00 pm Sat 09/12'):
     current_date_time = datetime.now()
     time_difference = abs(parsed_date_time - current_date_time)
     days = time_difference.days
-    return days
+    return days, parsed_date_time
 
 def analyze_goals(goal_list, threshold = 2.5, ):
     hometeam1 = [goal_list[0],goal_list[3]]

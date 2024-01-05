@@ -1,8 +1,12 @@
 from django.contrib import admin
 from import_export.admin import ImportExportModelAdmin
-from .models import BetLink, Market, Selections, Bookmakers, Event, EventSelection, EventOdds
+from .models import BetpawaBets, BetLink, Market, Selections, Bookmakers, Event, EventSelection, EventOdds
 
 # Register your models here.
+
+@admin.register(BetpawaBets)
+class BetpawaBetsAdmin(admin.ModelAdmin):
+    pass
 @admin.register(BetLink)
 class BetLinkAdmin(admin.ModelAdmin):
     list_display = ['link_url','league','country', 'order','Level']

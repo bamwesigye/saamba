@@ -51,7 +51,7 @@ class Bookmakers(models.Model):
 
 class BetLink(models.Model):
 
-    link_url = models.URLField(_("link"), max_length=200, unique=True)
+    link_url = models.URLField(_("link"), max_length=200)
     league = models.CharField(_("league"), max_length=50)
     country = models.CharField(_("Country"), max_length=50)
     Level = models.CharField(_("Level"), max_length=50)
@@ -120,7 +120,7 @@ class BetpawaBets(models.Model):
     event_match = models.CharField(_("Event Match"), max_length=255)
     event_tournament = models.CharField(_("Tournament"), max_length=50)
     selection = models.CharField(_("Selection"), max_length=50)
-    selection_odds = models.DecimalField(_("Odds"), max_digits=5, decimal_places=2)
+    selection_odds = models.DecimalField(_("Odds"), max_digits=5, decimal_places=2, null=True, blank=True)
     event_data = models.CharField(_("data"), max_length=50)
     
     class Meta:
