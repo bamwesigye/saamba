@@ -2,9 +2,6 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 
-
-
-
 # selenium 4
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
@@ -18,7 +15,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 
 from tqdm import tqdm
-
+from datetime import datetime
 from core.models import BetLink, BetpawaBets
 
 class Command(BaseCommand):
@@ -79,22 +76,24 @@ class Betpawa:
             pass
     
     def place_events(self, link_url):
-        self.driver.get(link_url)
-        time.sleep(2)
-        event_links = []
-        events = self.driver.find_elements(By.CLASS_NAME,"event-match")       
-        for event in events:
-            event_links.append(event.get_attribute("href"))
-        time.sleep(2)
-        for event_link in event_links:
-            self.get_statistics(event_link)
-            print(f"{self.events_counter} counted vs {self.events_threshold} ")
-            if self.events_counter > self.events_threshold:
-                time.sleep(2)
-                self.create_code()
-                self.events_counter = 0
-                time.sleep(2)
-
+        try:
+            self.driver.get(link_url)
+            time.sleep(2)
+            event_links = []
+            events = self.driver.find_elements(By.CLASS_NAME,"event-match")       
+            for event in events:
+                event_links.append(event.get_attribute("href"))
+            time.sleep(2)
+            for event_link in event_links:
+                self.get_statistics(event_link)
+                print(f"{self.events_counter} counted vs {self.events_threshold} ")
+                if self.events_counter > self.events_threshold:
+                    time.sleep(2)
+                    self.create_code()
+                    self.events_counter = 0
+                    time.sleep(2)
+        except Exception as e:
+            print("Failed to get league", e)
 
     def get_upcoming(self, events_limit):
         self.driver.get('https://www.betpawa.ug/upcoming?marketId=_1X2&categoryId=2')
@@ -121,10 +120,10 @@ class Betpawa:
     def get_statistics(self, event_link):
         driver = self.driver
         wait = WebDriverWait(driver, 20)
-        driver.get(event_link)
-        time.sleep(5)
-        print(driver.current_url)
         try:
+            driver.get(event_link)
+            time.sleep(5)
+            print(driver.current_url)
             match_date = driver.find_element(By.CSS_SELECTOR,'.event-header-date').text
             match_particpants = driver.find_element(By.CSS_SELECTOR,'.event-header-participants').text
             print(match_particpants)
@@ -132,7 +131,7 @@ class Betpawa:
             print(match_details)
             date_diff, match_day = get_date_diff(match_date)
             print(match_date,'hours difference = ', date_diff)
-            if date_diff < 3 :
+            if date_diff < 5 :
                 wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".event-statistics-text")))
                 time.sleep(2)    
                 driver.find_element(By.CSS_SELECTOR,".event-statistics-text").click() # change to wait until
@@ -168,23 +167,24 @@ class Betpawa:
                 if result > 2.1:
                     odds_text = self.bet_place(4)
                     print(f" Over {self.over_threshold} selected, adding 1 to the counter")
-                    bet = BetpawaBets(event_link=driver.current_url, event_match=match_particpants, event_tournament=match_details, selection=odds_text, event_data= str(scores_list))
+                    match_bet = BetpawaBets(event_link=driver.current_url, event_match=match_particpants, event_tournament=match_details, selection=odds_text, event_data= str(scores_list))
                     self.events_counter = self.events_counter + 1
-                    
+                    match_date.save()
+
                 elif result <-2.1 :
                 # elif average <-1.1 :
                     odds_text = self.bet_place(5)
-                    bet = BetpawaBets(event_link=driver.current_url, event_match=match_particpants, event_tournament=match_details, selection=odds_text, event_data= str(scores_list))
+                    match_bet = BetpawaBets(event_link=driver.current_url, event_match=match_particpants, event_tournament=match_details, selection=odds_text, event_data= str(scores_list))
                     self.events_counter = self.events_counter + 1
                     print(f" Under {self.over_threshold} selected, adding 1 to the counter")
+                    match_bet.save()
+                    
                 else:
                     print("No Bet Selected, count is still ", self.events_counter)
-
-                bet.save()
             else:
                 print('match is further than 3 days')
         except Exception as e:
-            print("Skipping Live match", e)
+            print("failed to get match", e)
     
     def bet_place(self, bet):
         # 1 homewin
@@ -231,6 +231,11 @@ class Betpawa:
         print(code.text)
         bet_code = code.text.split()
         bet_code = f"{bet_code[2]}"
+        bet_odds = self.driver.find_element(By.CSS_SELECTOR,".side-bar.content").text
+        current_time = datetime.now().strftime("%d%m%Y_%H%M%S")
+        file_name = f"betcodes/{bet_code} - {current_time}.txt"
+        with open(file_name, 'a') as file:
+            file.write(f'{bet_code} \n\n\n{bet_odds}')
         self.send_sms(bet_code)
         print(f"\n\n\n sent {bet_code} \n\n\n")
         self.driver.get('https://www.betpawa.ug/')
@@ -283,9 +288,9 @@ class Betpawa:
         try:
             # sending post request and saving response as response object
             r = requests.get(url=url, params=parameters, timeout=timeout)
-            r = requests.get(url=url, params=parameterstwo, timeout=timeout)
-            r = requests.get(url=url, params=parametersthree, timeout=timeout)
-            r = requests.get(url=url, params=parametersfour, timeout=timeout)
+            # r = requests.get(url=url, params=parameterstwo, timeout=timeout)
+            # r = requests.get(url=url, params=parametersthree, timeout=timeout)
+            # r = requests.get(url=url, params=parametersfour, timeout=timeout)
             response = r.text
             print(response)
         except(requests.ConnectionError, requests.Timeout) as exception:
@@ -302,3 +307,4 @@ class Betpawa:
         
     def close(self):
         self.driver.close()
+

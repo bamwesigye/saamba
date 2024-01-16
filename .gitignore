@@ -9,6 +9,8 @@
 *.db
 *.log
 
+betcodes/
+
 # Media files
 media/
 
