@@ -6,7 +6,9 @@ from .models import BetpawaBets, BetLink, Market, Selections, Bookmakers, Event,
 
 @admin.register(BetpawaBets)
 class BetpawaBetsAdmin(admin.ModelAdmin):
-    pass
+    list_display = ['event_time','event_link','event_match','event_tournament','selection','is_placed']
+    list_filter= ['event_time','selection','event_tournament','is_placed']
+    list_editable = ['is_placed']
 @admin.register(BetLink)
 class BetLinkAdmin(admin.ModelAdmin):
     list_display = ['link_url','league','country', 'order','Level']

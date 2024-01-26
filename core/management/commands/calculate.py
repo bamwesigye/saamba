@@ -15,7 +15,6 @@ from selenium.webdriver.support import expected_conditions as EC
 def get_date_diff(date_string='3:00 pm Sat 09/12'):
     # Get the current year
     current_year = datetime.now().strftime("%Y")
-
     # Concatenate the current year with the existing string
     date_string = date_string + " " + current_year
     date_format = "%I:%M %p %a %d/%m %Y"

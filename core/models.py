@@ -116,14 +116,17 @@ class EventOdds(models.Model):
 
 
 class BetpawaBets(models.Model):
+    event_time = models.DateTimeField(_("Match Time"), blank=True, null=True)
     event_link = models.URLField(_("Event Link"), max_length=200)
     event_match = models.CharField(_("Event Match"), max_length=255)
     event_tournament = models.CharField(_("Tournament"), max_length=50)
     selection = models.CharField(_("Selection"), max_length=50)
     selection_odds = models.DecimalField(_("Odds"), max_digits=5, decimal_places=2, null=True, blank=True)
     event_data = models.CharField(_("data"), max_length=50)
+    is_placed = models.BooleanField(default=False)
     
     class Meta:
+        unique_together = ['event_link','selection']
         verbose_name = _("betpawabets")
         verbose_name_plural = _("betpawabets")
 
