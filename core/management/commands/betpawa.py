@@ -25,22 +25,31 @@ class Command(BaseCommand):
         parser.add_argument('--events', type=int, default=30, help='Events Threshold')
         parser.add_argument('--overs', type=float, default=1.5, help='Overs Threshold')
         parser.add_argument('--diff', type=int, default=3, help='Overs Threshold')
+        parser.add_argument('--tickets', type=int, default=5, help='number of bets per gane')
+        parser.add_argument('--min_odds', type=float, default=1.2, help='Minimum Odds')
+        parser.add_argument('--max_odds', type=float, default=1.7, help='Maximum Odds')
+
 
     def handle(self, *args, **kwargs):
         events_threshold = kwargs['events']
         overs_threshold = kwargs['overs']
         diff = kwargs['diff']
-        
-        betpawa = Betpawa(events_threshold, overs_threshold, diff)
-
-        # betpawa.login()
-        while True:
+        tickets = kwargs['tickets']
+        min_odds = kwargs['min_odds']
+        max_odds = kwargs['max_odds']
+        overs_list = [3.5,2.5,1.5,0.5]
+        # overs_list = [1.5,3.5]
+        for over in overs_list:
+            betpawa = Betpawa(35, over, diff,tickets=tickets, min_odds=min_odds, max_odds=max_odds)
             links = BetLink.objects.all().order_by('?')
             for link in tqdm(links, desc="Progress"):
                 self.stdout.write(f"Working on {link.link_url} - {link.league}")
                 betpawa.place_events(link.link_url)
             betpawa.create_code()
-            # time.sleep(60*60*24)
+        time.sleep(3)
+        betpawa.login()
+        time.sleep(1)
+        betpawa.place_tickets(events_threshold,tickets)
 
 
 # Set up Chrome options for headless mode
@@ -52,7 +61,7 @@ from .calculate import analyze_goals, get_date_diff
 
 
 class Betpawa:
-    def __init__(self, events_threshold, over_threshold, diff, tickets=5):
+    def __init__(self, events_threshold, over_threshold, diff, tickets, min_odds, max_odds):
         self.driver = webdriver.Chrome(options= chrome_options, service=ChromeService(ChromeDriverManager().install()))
         self.driver.get("https://betpawa.ug/")
         self.driver.maximize_window()
@@ -61,6 +70,8 @@ class Betpawa:
         self.over_threshold = over_threshold
         self.diff = diff
         self.tickets = tickets
+        self.min_odds = min_odds
+        self.max_odds = max_odds
         time.sleep(5)
 
     def login(self):
@@ -179,7 +190,6 @@ class Betpawa:
                         match_bet.save()
                     except Exception as e:
                         print(e)
-
                 elif result <-2.1 :
                 # elif average <-1.1 :
                     odds_text = self.bet_place(5)
@@ -211,11 +221,9 @@ class Betpawa:
                     odd_select = self.driver.find_element(By.XPATH,f"//span[contains(text(),'Over ({self.over_threshold})')]")
                     odd_select.click()
                     time.sleep(1)
-                    odd_text = odd_select.text
-                    
+                    odd_text = odd_select.text                    
                 except:
-                    print("No bet")
-            
+                    print("No bet")            
             case 5:
                 try:
                     self.driver.find_element(By.CSS_SELECTOR,"[data-test-id='tabs-goals']").click()
@@ -318,28 +326,39 @@ class Betpawa:
     def close(self):
         self.driver.close()
 
-    def place_tickets(self, no_events, no_tickets):
+    def place_tickets(self, no_events, no_tickets, ):
         self.driver.get('https://www.betpawa.ug/')
         time.sleep(1)
         print("no of tickets = ", no_tickets, "events =", no_events)
         for i in range(no_tickets):
             current_time = timezone.now()
-            events_to_place = BetpawaBets.objects.filter(event_time__gt=current_time,is_placed=False).order_by("?")[:no_events]
-            print(events_to_place)
+            print(self.min_odds,"min_odds", self.max_odds, "max odds")
+            start_time = current_time + timezone.timedelta(hours=1)
+            end_time = current_time + timezone.timedelta(hours=48)
+            events_to_place = BetpawaBets.objects.filter(event_time__range=(start_time,end_time),is_placed=False).order_by("?")
+            events_counter = 0
             for event in events_to_place:
                 self.driver.get(event.event_link)
                 time.sleep(3)
-                print('\n\n\n',event,'\n\n\n')
-                print('\n\n\n',event.selection,'\n',event.event_link,'\n\n\n')
-                self.driver.find_element(By.CSS_SELECTOR,"[data-test-id='tabs-goals']").click()
                 try:
+                    self.driver.find_element(By.CSS_SELECTOR,"[data-test-id='tabs-goals']").click()
                     time.sleep(3)
                     odd_select = self.driver.find_element(By.XPATH,f"//span[contains(text(),'{event.selection}')]")
-                    odd_select.click()
-                    event.is_placed=True
-                    event.save()
+                    odds_value = odd_select.find_element(By.XPATH,"..")
+                    odds_value = float(odds_value.text[-4:])
+                    print(event.event_match, " - ", event.selection, "odds=", odds_value)
+                    if self.min_odds < odds_value < self.max_odds:
+                        odd_select.click()
+                        event.is_placed=True
+                        event.save()
+                        events_counter = events_counter + 1
+                    else:
+                        print("skipping selection, Odds do not match")
                 except Exception as e:
                     print(e)
+                if events_counter > no_events:
+                    break
                 time.sleep(3)
+
             self.place_bet(5)
 
