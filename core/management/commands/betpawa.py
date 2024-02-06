@@ -352,13 +352,13 @@ class Betpawa:
                         event.is_placed=True
                         event.save()
                         events_counter = events_counter + 1
+                        print("\n placed event, odds are sufficient\n\n events placed = ", events_counter)
                     else:
-                        print("skipping selection, Odds do not match")
+                        print("skipping selection, Odds do not match \n\n Events still ", events_counter)
                 except Exception as e:
                     print(e)
                 if events_counter > no_events:
                     break
                 time.sleep(3)
-
-            self.place_bet(5)
+                self.place_bet(5)
 
