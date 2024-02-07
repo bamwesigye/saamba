@@ -27,7 +27,7 @@ class Command(BaseCommand):
         parser.add_argument('--diff', type=int, default=3, help='Overs Threshold')
         parser.add_argument('--tickets', type=int, default=5, help='number of bets per gane')
         parser.add_argument('--min_odds', type=float, default=1.2, help='Minimum Odds')
-        parser.add_argument('--max_odds', type=float, default=1.7, help='Maximum Odds')
+        parser.add_argument('--max_odds', type=float, default=7.0, help='Maximum Odds')
 
 
     def handle(self, *args, **kwargs):
