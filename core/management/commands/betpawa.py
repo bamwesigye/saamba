@@ -318,10 +318,13 @@ class Betpawa:
         time.sleep(1)
         self.driver.get('https://www.betpawa.ug/')
         time.sleep(1)
-        self.driver.find_element(By.CSS_SELECTOR,"#betslip-form-stake-input").send_keys(amount)
-        time.sleep(1)
-        self.driver.find_element(By.CSS_SELECTOR,"#betslip-form-stake-input").send_keys(Keys.RETURN)
-        time.sleep(1)
+        try:
+            self.driver.find_element(By.CSS_SELECTOR,"#betslip-form-stake-input").send_keys(amount)
+            time.sleep(1)
+            self.driver.find_element(By.CSS_SELECTOR,"#betslip-form-stake-input").send_keys(Keys.RETURN)
+            time.sleep(1)
+        except Exception as e:
+            print("No bets selected \n\n\n", e)
         
     def close(self):
         self.driver.close()
@@ -333,7 +336,7 @@ class Betpawa:
         for i in range(no_tickets):
             current_time = timezone.now()
             print(self.min_odds,"min_odds", self.max_odds, "max odds")
-            start_time = current_time + timezone.timedelta(hours=1)
+            start_time = current_time + timezone.timedelta(hours=2.5)
             end_time = current_time + timezone.timedelta(hours=48)
             events_to_place = BetpawaBets.objects.filter(event_time__range=(start_time,end_time),is_placed=False).order_by("?")
             events_counter = 0
@@ -360,5 +363,5 @@ class Betpawa:
                 if events_counter > no_events:
                     break
                 time.sleep(3)
-                self.place_bet(5)
+            self.place_bet(5)
 
