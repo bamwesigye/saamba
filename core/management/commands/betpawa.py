@@ -37,8 +37,8 @@ class Command(BaseCommand):
         tickets = kwargs['tickets']
         min_odds = kwargs['min_odds']
         max_odds = kwargs['max_odds']
-        overs_list = [3.5,2.5,1.5,0.5]
-        # overs_list = [1.5,3.5]
+        # overs_list = [3.5,2.5,1.5,0.5]
+        overs_list = [3.5,1.5]
         for over in overs_list:
             betpawa = Betpawa(35, over, diff,tickets=tickets, min_odds=min_odds, max_odds=max_odds)
             links = BetLink.objects.all().order_by('?')
