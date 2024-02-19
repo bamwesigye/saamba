@@ -24,6 +24,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         betpawa = Betpawa()
         betpawa.login()
+        
         betpawa.get_upcoming()
 
 
@@ -33,3 +34,4 @@ chrome_options = Options()
 # chrome_options.add_argument("--headless")
 
 
+# get the current time
