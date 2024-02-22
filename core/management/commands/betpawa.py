@@ -62,7 +62,7 @@ from .calculate import analyze_goals, get_date_diff
 
 class Betpawa:
     def __init__(self, events_threshold=35, over_threshold=3.5, diff=3, tickets=10, min_odds=1.2, max_odds=15.0):
-        self.driver = webdriver.Firefox(options= chrome_options, service=ChromeService(ChromeDriverManager().install()))
+        self.driver = webdriver.Chrome(options= chrome_options, service=ChromeService(ChromeDriverManager().install()))
         self.driver.get("https://betpawa.ug/")
         self.driver.maximize_window()
         self.events_counter = 0
@@ -115,13 +115,16 @@ class Betpawa:
     def get_upcoming(self,diff=24):
         self.driver.get('https://www.betpawa.ug/upcoming?marketId=_1X2&categoryId=2')
         # Number of times to scroll down
-        scrolls = 5
+        scrolls = 10
 
         for _ in range(scrolls):
             # Find an element to focus on (for example, the body element)
             body = self.driver.find_element(By.TAG_NAME,'body')
 
             # Simulate pressing the space bar
+            body.send_keys(Keys.SPACE)
+            body.send_keys(Keys.SPACE)
+            body.send_keys(Keys.SPACE)
             body.send_keys(Keys.SPACE)
 
             # Wait for a moment
@@ -333,9 +336,12 @@ class Betpawa:
         self.send_sms(bet_code)
         print(f"\n\n\n sent {bet_code} \n\n\n")
         self.driver.get('https://www.betpawa.ug/')
-        time.sleep(1)
-        self.driver.find_element(By.XPATH,"//a[contains(text(),'Clear Betslip')]").click()
-        time.sleep(1)
+        try:
+            time.sleep(1)
+            self.driver.find_element(By.XPATH,"//a[contains(text(),'Clear Betslip')]").click()
+            time.sleep(1)
+        except Exception as e:
+            print("No active betslips. moving on... ")
 
     def send_sms(self,bet_code):
         # Send the code to the sms api

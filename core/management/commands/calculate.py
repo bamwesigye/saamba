@@ -43,6 +43,8 @@ def analyze_goals(goal_list, threshold = 2.5, ):
 
 if __name__ == "__main__":
     driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()))
+    driver.get('https://www.betpawa.ug/upcoming?marketId=_1X2&categoryId=2')
+    
     links = ['https://www.betpawa.ug/event/16744583','https://www.betpawa.ug/event/15360033','https://www.betpawa.ug/event/16183424','https://www.betpawa.ug/event/15417183']
     for link in links:
         wait = WebDriverWait(driver, 20)
