@@ -27,7 +27,7 @@ class Command(BaseCommand):
         
         betpawa.get_upcoming()
 
-        betpawa.place_bet(amount=100)
+        betpawa.place_bet(amount=500)
 
 
 

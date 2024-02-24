@@ -336,13 +336,7 @@ class Betpawa:
         self.send_sms(bet_code)
         print(f"\n\n\n sent {bet_code} \n\n\n")
         self.driver.get('https://www.betpawa.ug/')
-        try:
-            time.sleep(1)
-            self.driver.find_element(By.XPATH,"//a[contains(text(),'Clear Betslip')]").click()
-            time.sleep(1)
-        except Exception as e:
-            print("No active betslips. moving on... ")
-
+        
     def send_sms(self,bet_code):
         # Send the code to the sms api
         url = "https://www.egosms.co/api/v1/plain/"
