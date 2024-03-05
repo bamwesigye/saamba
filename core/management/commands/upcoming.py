@@ -22,7 +22,7 @@ class Command(BaseCommand):
     help = 'Displays current time'
 
     def handle(self, *args, **kwargs):
-        betpawa = Betpawa(over_threshold=1.5)
+        betpawa = Betpawa(over_threshold=3.5)
         betpawa.login()
         
         betpawa.get_upcoming()

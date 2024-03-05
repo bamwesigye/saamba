@@ -38,7 +38,7 @@ class Command(BaseCommand):
         min_odds = kwargs['min_odds']
         max_odds = kwargs['max_odds']
         # overs_list = [3.5,2.5,1.5,0.5]
-        overs_list = [3.5,1.5]
+        overs_list = [3.5,1.5,2.5]
         for over in overs_list:
             betpawa = Betpawa(events_threshold, over, diff,tickets=tickets, min_odds=min_odds, max_odds=max_odds)
             links = BetLink.objects.all().order_by('?')
@@ -47,9 +47,6 @@ class Command(BaseCommand):
                 betpawa.place_events(link.link_url)
             betpawa.create_code()
         time.sleep(3)
-        betpawa.login()
-        time.sleep(1)
-        betpawa.place_tickets(events_threshold,tickets)
 
 
 # Set up Chrome options for headless mode
@@ -383,8 +380,8 @@ class Betpawa:
             # sending post request and saving response as response object
             r = requests.get(url=url, params=parameters, timeout=timeout)
             r = requests.get(url=url, params=parameterstwo, timeout=timeout)
-            r = requests.get(url=url, params=parametersthree, timeout=timeout)
-            r = requests.get(url=url, params=parametersfour, timeout=timeout)
+            # r = requests.get(url=url, params=parametersthree, timeout=timeout)
+            # r = requests.get(url=url, params=parametersfour, timeout=timeout)
             response = r.text
             print(response)
         except(requests.ConnectionError, requests.Timeout) as exception:
@@ -395,10 +392,13 @@ class Betpawa:
         self.driver.get('https://www.betpawa.ug/')
         time.sleep(4)
         try:
-            self.driver.find_element(By.CSS_SELECTOR,"#betslip-form-stake-input").send_keys(amount)
+            self.driver.find_element(By.CSS_SELECTOR,"#betslip-form-stake-input").click()
             time.sleep(1)
-            self.driver.find_element(By.CSS_SELECTOR,"#betslip-form-stake-input").send_keys(Keys.RETURN)
+            self.driver.find_element(By.CSS_SELECTOR,"#betslip-form-stake-input").send_keys(amount)
             time.sleep(7)
+            self.driver.find_element(By.CSS_SELECTOR,".place-bet").click()
+            time.sleep(5)
+            self.driver.find_element(By.CSS_SELECTOR,".place-bet").click()       
         except Exception as e:
             print("No bets selected \n\n\n", e)
         
@@ -412,7 +412,7 @@ class Betpawa:
         for i in range(no_tickets):
             current_time = timezone.now()
             print(self.min_odds,"min_odds", self.max_odds, "max odds")
-            start_time = current_time + timezone.timedelta(hours=2.5)
+            start_time = current_time + timezone.timedelta(hours=1.5)
             end_time = current_time + timezone.timedelta(hours=48)
             events_to_place = BetpawaBets.objects.filter(event_time__range=(start_time,end_time),is_placed=False).order_by("?")
             events_counter = 0
@@ -439,5 +439,5 @@ class Betpawa:
                 if events_counter > no_events:
                     break
                 time.sleep(3)
-            self.place_bet(5)
+            self.place_bet(amount=500)
 
