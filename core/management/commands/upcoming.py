@@ -23,10 +23,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         betpawa = Betpawa(over_threshold=3.5)
-        betpawa.login()
-        
+        betpawa.login()        
         betpawa.get_upcoming()
-
         betpawa.place_bet(amount=500)
 
 

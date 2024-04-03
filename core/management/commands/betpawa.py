@@ -41,11 +41,14 @@ class Command(BaseCommand):
         overs_list = [3.5,1.5,2.5]
         for over in overs_list:
             betpawa = Betpawa(events_threshold, over, diff,tickets=tickets, min_odds=min_odds, max_odds=max_odds)
+            betpawa.login()
             links = BetLink.objects.all().order_by('?')
             for link in tqdm(links, desc="Progress"):
                 self.stdout.write(f"Working on {link.link_url} - {link.league}")
                 betpawa.place_events(link.link_url)
             betpawa.create_code()
+            betpawa.place_bet(amount=1)
+        
         time.sleep(3)
 
 
@@ -105,6 +108,7 @@ class Betpawa:
                     time.sleep(2)
                     self.create_code()
                     self.events_counter = 0
+                    self.place_bet(2)
                     time.sleep(2)
         except Exception as e:
             print("Failed to get league", e)
@@ -180,7 +184,7 @@ class Betpawa:
                 print("Average Goals:", average)
                 time.sleep(2)
                 # if average > 1.1:
-                if result > 2.1:
+                if result > 3.1:
                     odds_text = self.bet_place(4)
                     # odds_text = self.bet_place(5) # reverse selection
                     print(f" Over {self.over_threshold} selected, adding 1 to the counter")
@@ -190,7 +194,7 @@ class Betpawa:
                         match_bet.save()
                     except Exception as e:
                         print(e)
-                elif result <- 2.1 :
+                elif result <- 3.1 :
                 # elif average <-1.1 :
                     odds_text = self.bet_place(5)
                     # odds_text = self.bet_place(4) #reverse selection
@@ -380,8 +384,8 @@ class Betpawa:
             # sending post request and saving response as response object
             r = requests.get(url=url, params=parameters, timeout=timeout)
             r = requests.get(url=url, params=parameterstwo, timeout=timeout)
-            # r = requests.get(url=url, params=parametersthree, timeout=timeout)
-            # r = requests.get(url=url, params=parametersfour, timeout=timeout)
+            r = requests.get(url=url, params=parametersthree, timeout=timeout)
+            r = requests.get(url=url, params=parametersfour, timeout=timeout)
             response = r.text
             print(response)
         except(requests.ConnectionError, requests.Timeout) as exception:
