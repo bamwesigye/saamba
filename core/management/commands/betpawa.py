@@ -259,7 +259,7 @@ class Betpawa:
                 print("Average Goals:", average)
                 time.sleep(2)
                 # if average > 1.1:
-                if result > 2.1:
+                if result > 3.1:
                     odds_text = self.bet_place(4)
                     # odds_text = self.bet_place(5) # reverse selection
                     print(f" Over {self.over_threshold} selected, adding 1 to the counter")
@@ -269,7 +269,7 @@ class Betpawa:
                         match_bet.save()
                     except Exception as e:
                         print(e)
-                elif result <- 2.1 :
+                elif result <- 3.1 :
                 # elif average <-1.1 :
                     odds_text = self.bet_place(5)
                     # odds_text = self.bet_place(4) #reverse selection
