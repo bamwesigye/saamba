@@ -135,3 +135,29 @@ class BetpawaBets(models.Model):
 
     # def get_absolute_url(self):
     #     return reverse("betpawabets_detail", kwargs={"pk": self.pk})
+
+
+class PlacedBets(models.Model):
+    betcode = models.CharField(_("betcode"), max_length=50)
+    betid = models.CharField(_("betid"), max_length=50)
+    betlink = models.URLField(_("betlink"), max_length=200)
+    won_legs = models.PositiveBigIntegerField(_("won_legs"), default=0)
+    lost_legs = models.PositiveBigIntegerField(_("lost_legs"), default=0)
+    pending_legs = models.PositiveBigIntegerField(_("pending_legs"), default=0)
+    postponed_legs = models.PositiveBigIntegerField(_("postponed_legs"), default=0)
+    stake   = models.PositiveBigIntegerField(_("stake"), default=0)
+    odds = models.DecimalField(_("odds"), max_digits=20, decimal_places=2, default = 1.00)
+    payout  = models.PositiveBigIntegerField(_("payout"), default=0)
+
+    class Meta:
+        verbose_name = _("placedbets")
+        verbose_name_plural = _("placedbets")
+
+    def __str__(self):
+        return self.betcode
+
+    # def get_absolute_url(self):
+    #     return reverse("placedbets_detail", kwargs={"pk": self.pk})
+
+
+

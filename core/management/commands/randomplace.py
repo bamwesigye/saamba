@@ -36,7 +36,6 @@ class Command(BaseCommand):
         diff = kwargs['diff']
         min_odds = kwargs['min_odds']
         max_odds = kwargs['max_odds']
-        betpawa = Betpawa(events_threshold, overs_threshold, diff,tickets=tickets, min_odds=min_odds, max_odds=max_odds)
-        betpawa.login()
+        betpawa = Betpawa()
         time.sleep(1)
-        betpawa.place_tickets(events_threshold,tickets)
+        betpawa.place_tickets(events_threshold, tickets)

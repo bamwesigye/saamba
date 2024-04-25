@@ -41,7 +41,6 @@ class Command(BaseCommand):
         overs_list = [3.5,1.5,2.5]
         for over in overs_list:
             betpawa = Betpawa(events_threshold, over, diff,tickets=tickets, min_odds=min_odds, max_odds=max_odds)
-            betpawa.login()
             links = BetLink.objects.all().order_by('?')
             for link in tqdm(links, desc="Progress"):
                 self.stdout.write(f"Working on {link.link_url} - {link.league}")
@@ -73,6 +72,7 @@ class Betpawa:
         self.min_odds = min_odds
         self.max_odds = max_odds
         time.sleep(5)
+        self.login()
 
     def login(self):
         self.driver.get("https://www.betpawa.ug/login")
@@ -108,34 +108,29 @@ class Betpawa:
                     time.sleep(2)
                     self.create_code()
                     self.events_counter = 0
-                    self.place_bet(2)
+                    self.place_bet(500)
                     time.sleep(2)
         except Exception as e:
             print("Failed to get league", e)
 
     def get_upcoming(self,diff=24):
         self.driver.get('https://www.betpawa.ug/upcoming?marketId=_1X2&categoryId=2')
-        # Number of times to scroll down
-        scrolls = 10
-
-        for _ in range(scrolls):
-            # Find an element to focus on (for example, the body element)
-            body = self.driver.find_element(By.TAG_NAME,'body')
-
-            # Simulate pressing the space bar
-            body.send_keys(Keys.SPACE)
-            body.send_keys(Keys.SPACE)
-            body.send_keys(Keys.SPACE)
-            body.send_keys(Keys.SPACE)
-
-            # Wait for a moment
-            time.sleep(5)
-            print('\a','a','\a')
+        time.sleep(2)
+        data = input("scroll down to the end and Press Enter to continue...")
         events = self.driver.find_elements(By.CLASS_NAME,"event-match")
         event_links = [event.get_attribute("href") for event in events]
-        [self.get_statistics(event_link=event_link) for event_link in event_links]
-        time.sleep(2)
-        self.create_code()
+        overs_list = [3.5,2.5,1.5]            
+        for over in overs_list:
+            self.over_threshold = over
+            for event in event_links:
+                self.get_statistics(event)
+                print(f"{self.events_counter} counted vs {self.events_threshold} ")
+                if self.events_counter > self.events_threshold:
+                    time.sleep(2)
+                    self.create_code()
+                    self.events_counter = 0
+                    self.place_bet(500)
+                    time.sleep(2)
 
     def get_statistics(self, event_link,):
         driver = self.driver
@@ -184,7 +179,7 @@ class Betpawa:
                 print("Average Goals:", average)
                 time.sleep(2)
                 # if average > 1.1:
-                if result > 3.1:
+                if result > 4.1:
                     odds_text = self.bet_place(4)
                     # odds_text = self.bet_place(5) # reverse selection
                     print(f" Over {self.over_threshold} selected, adding 1 to the counter")
@@ -194,7 +189,7 @@ class Betpawa:
                         match_bet.save()
                     except Exception as e:
                         print(e)
-                elif result <- 3.1 :
+                elif result <- 4.1 :
                 # elif average <-1.1 :
                     odds_text = self.bet_place(5)
                     # odds_text = self.bet_place(4) #reverse selection
@@ -321,7 +316,6 @@ class Betpawa:
 
     def create_code(self):
         time.sleep(2)
-        #find a element with text booking code
         self.driver.find_element(By.XPATH,"//a[contains(text(),'Booking code')]").click()
         time.sleep(2)
         code = self.driver.find_element(By.CSS_SELECTOR,".table.copy-bets")
@@ -401,8 +395,9 @@ class Betpawa:
             self.driver.find_element(By.CSS_SELECTOR,"#betslip-form-stake-input").send_keys(amount)
             time.sleep(7)
             self.driver.find_element(By.CSS_SELECTOR,".place-bet").click()
-            time.sleep(5)
-            self.driver.find_element(By.CSS_SELECTOR,".place-bet").click()       
+            time.sleep(10)
+            self.driver.find_element(By.CSS_SELECTOR,".place-bet").click()    
+            time.sleep(10)   
         except Exception as e:
             print("No bets selected \n\n\n", e)
         
@@ -418,7 +413,8 @@ class Betpawa:
             print(self.min_odds,"min_odds", self.max_odds, "max odds")
             start_time = current_time + timezone.timedelta(hours=1.5)
             end_time = current_time + timezone.timedelta(hours=48)
-            events_to_place = BetpawaBets.objects.filter(event_time__range=(start_time,end_time),is_placed=False).order_by("?")
+            events_to_place = BetpawaBets.objects.filter(event_time__range=(start_time,end_time),selection_odds__lt=self.max_odds,is_placed=False).order_by("?")
+            print(events_to_place.count(), "events to place")
             events_counter = 0
             for event in events_to_place:
                 self.driver.get(event.event_link)

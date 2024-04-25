@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-import time, json, requests, html
+import time, requests, html, os
 
 # selenium 4
 from selenium import webdriver
@@ -19,19 +19,13 @@ from .calculate import analyze_goals, get_date_diff
 from .betpawa import Betpawa
 
 class Command(BaseCommand):
-    help = 'Displays current time'
+    help = 'Get upcoming matches'
 
+    def add_arguments(self, parser):
+        parser.add_argument('--events', type=int, default=30, help='Events Threshold')
+      
     def handle(self, *args, **kwargs):
-        betpawa = Betpawa(over_threshold=3.5)
-        betpawa.login()        
+        events_threshold = kwargs['events']
+        betpawa = Betpawa(over_threshold=0.5, events_threshold=events_threshold)
         betpawa.get_upcoming()
-        betpawa.place_bet(amount=500)
-
-
-
-# Set up Chrome options for headless mode
-chrome_options = Options()
-# chrome_options.add_argument("--headless")
-
-
-# get the current time
+        time.sleep(2)
