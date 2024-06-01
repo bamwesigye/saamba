@@ -138,8 +138,8 @@ class BetpawaBets(models.Model):
 
 
 class PlacedBets(models.Model):
-    betcode = models.CharField(_("betcode"), max_length=50)
-    betid = models.CharField(_("betid"), max_length=50)
+    betcode = models.CharField(_("betcode"), max_length=50, null=True, blank=True)
+    betid = models.CharField(_("betid"), max_length=50, null=True, blank=True)
     betlink = models.URLField(_("betlink"), max_length=200)
     won_legs = models.PositiveBigIntegerField(_("won_legs"), default=0)
     lost_legs = models.PositiveBigIntegerField(_("lost_legs"), default=0)
@@ -159,5 +159,66 @@ class PlacedBets(models.Model):
     # def get_absolute_url(self):
     #     return reverse("placedbets_detail", kwargs={"pk": self.pk})
 
+class BetpawaMatch(models.Model):
+    match_link = models.URLField(_("Match Link"), max_length=200, unique=True,null=False,blank=False)
+    match_time = models.DateTimeField(_("Match Time"), blank=True, null=True)
+    home_team = models.CharField(_("Home Team"), max_length=50)
+    away_team = models.CharField(_("Away Team"), max_length=50)
+    tournament = models.CharField(_("Tournament"), max_length=50)
+    home_played = models.PositiveBigIntegerField(_("home_played"), default=0)
+    away_played = models.PositiveBigIntegerField(_("away_played"), default=0)
+    home_win_percentage = models.PositiveBigIntegerField(_("home_win_percentage"), default=0, null=True, blank=True)
+    away_win_percentage = models.PositiveBigIntegerField(_("away_win_percentage"), default=0, null=True, blank=True)
+    home_total_goals = models.PositiveBigIntegerField(_("home_total_goals"), default=0)
+    away_total_goals = models.PositiveBigIntegerField(_("away_total_goals"), default=0)
+    home_average_scored = models.DecimalField(_("Home Average Scored"), max_digits=5, decimal_places=2)
+    away_average_scored = models.DecimalField(_("Away Average Scored"), max_digits=5, decimal_places=2)
+    home_average_conceded = models.DecimalField(_("Home Average Conceded"), max_digits=5, decimal_places=2)
+    away_average_conceded = models.DecimalField(_("Away Average Conceded"), max_digits=5, decimal_places=2)
+    home_bts_percentage = models.PositiveBigIntegerField(_("home_bts_percentage"), default=0)
+    away_bts_percentage = models.PositiveBigIntegerField(_("away_bts_percentage"), default=0)
+    home_over_15 = models.PositiveBigIntegerField(_("home_over_15"), default=0)
+    away_over_15 = models.PositiveBigIntegerField(_("away_over_15"), default=0)
+    home_over_25 = models.PositiveBigIntegerField(_("home_over_25"), default=0)
+    away_over_25 = models.PositiveBigIntegerField(_("away_over_25"), default=0)
+    ht_home_over_05 = models.PositiveBigIntegerField(_("ht_home_over_05"), default=0)
+    ht_away_over_05 = models.PositiveBigIntegerField(_("ht_away_over_05"), default=0)
+    ht_home_over_15 = models.PositiveBigIntegerField(_("ht_home_over_15"), default=0)
+    ht_away_over_15 = models.PositiveBigIntegerField(_("ht_away_over_15"), default=0)
+    home_yellow_cards = models.PositiveBigIntegerField(_("home_yellow_card"), default=0, null=True, blank=True)
+    away_yellow_cards = models.PositiveBigIntegerField(_("away_yellow_card"), default=0, null=True, blank=True)
+    home_total_cards = models.PositiveBigIntegerField(_("home_total_cards"), default=0, null=True, blank=True)
+    away_total_cards = models.PositiveBigIntegerField(_("away_total_cards"), default=0, null=True, blank=True)
+    is_settled = models.BooleanField(_("Is Settled"), default=False)
+    half_time_home_goals = models.PositiveBigIntegerField(_("half_time_home_goals"), null=True, blank=True)
+    half_time_away_goals = models.PositiveBigIntegerField(_("half_time_away_goals"), null=True, blank=True)
+    full_time_home_goals = models.PositiveBigIntegerField(_("full_time_home_goals"), null=True, blank=True)
+    full_time_away_goals = models.PositiveBigIntegerField(_("full_time_away_goals"), null=True, blank=True)
 
 
+
+    class Meta:
+        verbose_name = _("betpawamatch")
+        verbose_name_plural = _("betpawamatches")
+
+    def __str__(self):
+        return f"{self.home_team} vs {self.away_team} - {self.match_link}"
+
+    # def get_absolute_url(self):
+    #     return reverse("betpawamatch_detail", kwargs={"pk": self.pk})
+
+
+class AccountBalance(models.Model):
+    day = models.DateTimeField(_("day"), blank=True, null=True)
+    amount = models.PositiveBigIntegerField(_("amount"), default=0)
+       
+
+    class Meta:
+        verbose_name = _("accountbalance")
+        verbose_name_plural = _("accountbalances")
+
+    def __str__(self):
+        return f"{self.day} - {self.amount}"
+
+    # def get_absolute_url(self):
+    #     return reverse("accountbalance_detail", kwargs={"pk": self.pk})

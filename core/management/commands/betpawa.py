@@ -14,9 +14,12 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 
+
 from tqdm import tqdm
 from datetime import datetime
-from core.models import BetLink, BetpawaBets
+from core.models import AccountBalance, BetLink, BetpawaBets, PlacedBets, BetpawaMatch
+from .calculate import analyze_goals, get_date_diff, convert_percentage_to_value
+
 
 class Command(BaseCommand):
     help = 'Displays current time'
@@ -55,10 +58,6 @@ class Command(BaseCommand):
 chrome_options = Options()
 # chrome_options.add_argument("--headless")
 
-
-from .calculate import analyze_goals, get_date_diff
-
-
 class Betpawa:
     def __init__(self, events_threshold=35, over_threshold=3.5, diff=3, tickets=10, min_odds=1.2, max_odds=15.0):
         self.driver = webdriver.Chrome(options= chrome_options, service=ChromeService(ChromeDriverManager().install()))
@@ -71,8 +70,11 @@ class Betpawa:
         self.tickets = tickets
         self.min_odds = min_odds
         self.max_odds = max_odds
-        time.sleep(5)
+        time.sleep(2)
         self.login()
+        time.sleep(2)
+        self.get_account_balance()
+
 
     def login(self):
         self.driver.get("https://www.betpawa.ug/login")
@@ -92,6 +94,17 @@ class Betpawa:
             # print(odd.text)
             pass
     
+    def get_event_urls(self,urls_link):
+        driver = self.driver
+        wait = WebDriverWait(driver, 20)
+        driver.get(urls_link)
+        time.sleep(2)
+        event_links = []
+        events = self.driver.find_elements(By.CLASS_NAME,"event-match")       
+        for event in events:
+            event_links.append(event.get_attribute("href"))
+        return event_links
+
     def place_events(self, link_url):
         try:
             self.driver.get(link_url)
@@ -119,7 +132,7 @@ class Betpawa:
         data = input("scroll down to the end and Press Enter to continue...")
         events = self.driver.find_elements(By.CLASS_NAME,"event-match")
         event_links = [event.get_attribute("href") for event in events]
-        overs_list = [3.5,2.5,1.5]            
+        overs_list = [3.5,1.5]            
         for over in overs_list:
             self.over_threshold = over
             for event in event_links:
@@ -129,8 +142,9 @@ class Betpawa:
                     time.sleep(2)
                     self.create_code()
                     self.events_counter = 0
-                    self.place_bet(500)
+                    self.place_bet(2)
                     time.sleep(2)
+        self.place_bet(2)
 
     def get_statistics(self, event_link,):
         driver = self.driver
@@ -386,18 +400,31 @@ class Betpawa:
             print("Check your internet connection")
 
     def place_bet(self, amount=100):
-        time.sleep(1)
+        wait = WebDriverWait(self.driver, 20)
+        time.sleep(2)
+        self.driver.find_element(By.XPATH,"//a[contains(text(),'Booking code')]").click()
+        time.sleep(2)
+        code = self.driver.find_element(By.CSS_SELECTOR,".table.copy-bets")
+        time.sleep(2)
+        print(code.text)
+        bet_code = code.text.split()
+        bet_code = f"{bet_code[2]}"
         self.driver.get('https://www.betpawa.ug/')
-        time.sleep(4)
+        time.sleep(2)
         try:
             self.driver.find_element(By.CSS_SELECTOR,"#betslip-form-stake-input").click()
             time.sleep(1)
             self.driver.find_element(By.CSS_SELECTOR,"#betslip-form-stake-input").send_keys(amount)
-            time.sleep(7)
+            time.sleep(2)
             self.driver.find_element(By.CSS_SELECTOR,".place-bet").click()
-            time.sleep(10)
-            self.driver.find_element(By.CSS_SELECTOR,".place-bet").click()    
-            time.sleep(10)   
+            wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".open-details-container")))
+            time.sleep(2)
+            betslip_link = self.driver.find_element(By.CSS_SELECTOR,".open-details-container")
+            print(betslip_link)
+            betslip_link = betslip_link.find_element(By.TAG_NAME,'a').get_attribute('href')
+            placedbet = PlacedBets(betcode=bet_code, betlink=betslip_link, stake=amount)
+            placedbet.save()
+            self.driver.get('https://www.betpawa.ug/')
         except Exception as e:
             print("No bets selected \n\n\n", e)
         
@@ -413,7 +440,7 @@ class Betpawa:
             print(self.min_odds,"min_odds", self.max_odds, "max odds")
             start_time = current_time + timezone.timedelta(hours=1.5)
             end_time = current_time + timezone.timedelta(hours=48)
-            events_to_place = BetpawaBets.objects.filter(event_time__range=(start_time,end_time),selection_odds__lt=self.max_odds,is_placed=False).order_by("?")
+            events_to_place = BetpawaBets.objects.filter(event_time__range=(start_time,end_time),is_placed=False).order_by("?")
             print(events_to_place.count(), "events to place")
             events_counter = 0
             for event in events_to_place:
@@ -440,4 +467,86 @@ class Betpawa:
                     break
                 time.sleep(3)
             self.place_bet(amount=500)
+
+    def get_event_data(self, url):
+        driver = self.driver
+        wait = WebDriverWait(driver, 20)
+        driver.get(url)
+        time.sleep(2)
+        match_date = driver.find_element(By.CSS_SELECTOR,'.event-header-date').text
+        date_diff, match_time = get_date_diff(match_date)
+        print(match_time)
+        match_particpants = driver.find_elements(By.CSS_SELECTOR,'.event-participant')
+        match_particpants = [participant.text for participant in match_particpants]
+        print(match_particpants)
+        tournament = driver.find_element(By.CSS_SELECTOR,'.event-breadcrumb').text
+        print(tournament)
+        print(match_date,'hours difference = ', date_diff)
+        wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".event-statistics-text")))
+        time.sleep(2)    
+        driver.find_element(By.CSS_SELECTOR,".event-statistics-text").click() # change to wait until
+        wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "[data-test-tab='teamstats']")))
+        time.sleep(1)
+        driver.find_element(By.CSS_SELECTOR,'[data-test-tab="teamstats"]').click()
+        time.sleep(1)
+        stats = driver.find_element(By.CSS_SELECTOR,'.widget-wrapper').text
+        stats = stats.split('\n')
+        print(stats)
+        time.sleep(4)
+        driver.find_element(By.CSS_SELECTOR,'button.sr-slider-button6.srt-fill-neutral-2.srm-dir-right.srt-fill-text-secondary.sr-hth-inline-slidernavigation__arrow-container-2').click()
+        time.sleep(1)
+        stats_two = driver.find_element(By.CSS_SELECTOR,'.widget-wrapper').text
+        stats_two = stats_two.split('\n')
+        print(stats_two)
+        match = BetpawaMatch(
+            match_link = url,
+            match_time=match_time,
+            home_team = match_particpants[0],
+            away_team = match_particpants[1],
+            tournament = tournament,
+            home_played = int(stats[11]),
+            away_played = int(stats[13]),
+            home_win_percentage = convert_percentage_to_value(stats[14]),
+            away_win_percentage = convert_percentage_to_value(stats[16]),
+            home_total_goals = int(stats[17]) if stats[17].isdigit() else None,
+            away_total_goals = int(stats[19]) if stats[19].isdigit() else None,
+            home_average_scored = float(stats[20]),
+            away_average_scored = float(stats[22]),
+            home_average_conceded = float(stats[23]),
+            away_average_conceded = float(stats[25]),
+            home_bts_percentage = convert_percentage_to_value(stats[26]),
+            away_bts_percentage = convert_percentage_to_value(stats[28]),
+            home_over_15 = convert_percentage_to_value(stats_two[11]),
+            away_over_15 = convert_percentage_to_value(stats_two[13]),
+            home_over_25 = convert_percentage_to_value(stats_two[14]),
+            away_over_25 = convert_percentage_to_value(stats_two[16]),
+            ht_home_over_05 = convert_percentage_to_value(stats_two[17]),
+            ht_away_over_05 = convert_percentage_to_value(stats_two[19]),
+            ht_home_over_15 = convert_percentage_to_value(stats_two[20]),
+            ht_away_over_15 = convert_percentage_to_value(stats_two[22]),
+            home_yellow_cards = int(stats_two[23]) if stats_two[23].isdigit() else None,
+            away_yellow_cards = int(stats_two[25])if stats_two[25].isdigit() else None,
+            home_total_cards = int(stats_two[26])if stats_two[26].isdigit() else None,
+            away_total_cards = int(stats_two[28])if stats_two[28].isdigit() else None
+        )
+        try:
+            match.save()
+            print(match)
+            time.sleep(1)
+        except Exception as e:
+            print('Invalid match Data Skipping or duplicate match',e)
+    
+    def get_account_balance(self):
+        driver = self.driver
+        wait = WebDriverWait(driver, 20)
+        driver.get('https://www.betpawa.ug/bets/settled')
+        time.sleep(2)
+        balance = driver.find_element(By.CSS_SELECTOR,'.balance').text
+        balance = balance.split(' ')[-1]
+        balance = balance.replace(',','')
+        balance = float(balance)
+        print(" Current balance = ",balance)
+        acc_bal = AccountBalance(day = datetime.now(),amount=balance)
+        acc_bal.save()
+        return balance
 

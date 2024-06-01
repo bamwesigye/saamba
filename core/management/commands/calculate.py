@@ -39,7 +39,14 @@ def analyze_goals(goal_list, threshold = 2.5, ):
     result = overs - unders    
     return result, scores_list
 
-
+def convert_percentage_to_value(percentage_text):
+    # Remove the percentage sign and convert the remaining text to an integer value
+    # Divide the value by 100 to get the actual percentage
+    try:
+        value = int(percentage_text.strip('%'))
+    except:
+        value = None
+    return value
 
 if __name__ == "__main__":
     driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()))

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from import_export.admin import ImportExportModelAdmin
-from .models import BetpawaBets, BetLink, Market, Selections, Bookmakers, Event, EventSelection, EventOdds
+from .models import AccountBalance, BetpawaBets, BetLink, BetpawaMatch, Market, Selections, Bookmakers, Event, EventSelection, EventOdds, PlacedBets
 
 # Register your models here.
 
@@ -39,3 +39,18 @@ class EventSelectionAdmin(admin.ModelAdmin):
 @admin.register(EventOdds)
 class EventOddsAdmin(admin.ModelAdmin):
     pass
+
+@admin.register(PlacedBets)
+class PlacedBetsAdmin(admin.ModelAdmin):
+    list_display = ['betid','betlink','stake','odds','payout']
+
+@admin.register(AccountBalance)
+class AccountBalanceAdmin(admin.ModelAdmin):
+    list_display = ['day','amount']
+
+
+@admin.register(BetpawaMatch)
+class BetpawaMatchAdmin(admin.ModelAdmin):
+    list_display = ['match_link','match_time','home_team','away_team','is_settled']
+    list_filter = ['match_time','tournament','is_settled']
+    list_editable = ['is_settled']
