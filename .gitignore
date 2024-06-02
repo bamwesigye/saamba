@@ -10,6 +10,7 @@
 *.log
 
 betcodes/
+myenv/
 
 # Media files
 media/
