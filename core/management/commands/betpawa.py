@@ -28,7 +28,7 @@ class Command(BaseCommand):
         parser.add_argument('--events', type=int, default=30, help='Events Threshold')
         parser.add_argument('--overs', type=float, default=1.5, help='Overs Threshold')
         parser.add_argument('--diff', type=int, default=3, help='Overs Threshold')
-        parser.add_argument('--tickets', type=int, default=5, help='number of bets per gane')
+        parser.add_argument('--tickets', type=int, default=5, help='number of bets per game')
         parser.add_argument('--min_odds', type=float, default=1.2, help='Minimum Odds')
         parser.add_argument('--max_odds', type=float, default=7.0, help='Maximum Odds')
 
@@ -71,9 +71,9 @@ class Betpawa:
         self.min_odds = min_odds
         self.max_odds = max_odds
         time.sleep(2)
-        self.login()
-        time.sleep(2)
-        self.get_account_balance()
+        # self.login()
+        # time.sleep(2)
+        #self.get_account_balance()
 
 
     def login(self):
@@ -148,11 +148,15 @@ class Betpawa:
 
     def get_statistics(self, event_link,):
         driver = self.driver
+        driver.set_window_size(1080,800)
         wait = WebDriverWait(driver, 20)
+        
         try:
             driver.get(event_link)
             time.sleep(5)
             print(driver.current_url)
+            # driver.execute_script("document.body.style.zoom='150%'")
+            time.sleep(5)
             match_date = driver.find_element(By.CSS_SELECTOR,'.event-header-date').text
             match_particpants = driver.find_element(By.CSS_SELECTOR,'.event-header-participants').text
             print(match_particpants)
@@ -493,41 +497,41 @@ class Betpawa:
         stats = stats.split('\n')
         print(stats)
         time.sleep(4)
-        driver.find_element(By.CSS_SELECTOR,'button.sr-slider-button6.srt-fill-neutral-2.srm-dir-right.srt-fill-text-secondary.sr-hth-inline-slidernavigation__arrow-container-2').click()
-        time.sleep(1)
-        stats_two = driver.find_element(By.CSS_SELECTOR,'.widget-wrapper').text
-        stats_two = stats_two.split('\n')
-        print(stats_two)
+        #driver.find_element(By.CSS_SELECTOR,'button.sr-slider-button6.srt-fill-neutral-2.srm-dir-right.srt-fill-text-secondary.sr-hth-inline-slidernavigation__arrow-container-2').click()
+        #time.sleep(1)
+        #stats_two = driver.find_element(By.CSS_SELECTOR,'.widget-wrapper').text
+        #stats_two = stats_two.split('\n')
+        #print(stats_two)
         match = BetpawaMatch(
             match_link = url,
             match_time=match_time,
             home_team = match_particpants[0],
             away_team = match_particpants[1],
             tournament = tournament,
-            home_played = int(stats[11]),
-            away_played = int(stats[13]),
-            home_win_percentage = convert_percentage_to_value(stats[14]),
-            away_win_percentage = convert_percentage_to_value(stats[16]),
-            home_total_goals = int(stats[17]) if stats[17].isdigit() else None,
-            away_total_goals = int(stats[19]) if stats[19].isdigit() else None,
-            home_average_scored = float(stats[20]),
-            away_average_scored = float(stats[22]),
-            home_average_conceded = float(stats[23]),
-            away_average_conceded = float(stats[25]),
-            home_bts_percentage = convert_percentage_to_value(stats[26]),
-            away_bts_percentage = convert_percentage_to_value(stats[28]),
-            home_over_15 = convert_percentage_to_value(stats_two[11]),
-            away_over_15 = convert_percentage_to_value(stats_two[13]),
-            home_over_25 = convert_percentage_to_value(stats_two[14]),
-            away_over_25 = convert_percentage_to_value(stats_two[16]),
-            ht_home_over_05 = convert_percentage_to_value(stats_two[17]),
-            ht_away_over_05 = convert_percentage_to_value(stats_two[19]),
-            ht_home_over_15 = convert_percentage_to_value(stats_two[20]),
-            ht_away_over_15 = convert_percentage_to_value(stats_two[22]),
-            home_yellow_cards = int(stats_two[23]) if stats_two[23].isdigit() else None,
-            away_yellow_cards = int(stats_two[25])if stats_two[25].isdigit() else None,
-            home_total_cards = int(stats_two[26])if stats_two[26].isdigit() else None,
-            away_total_cards = int(stats_two[28])if stats_two[28].isdigit() else None
+            home_played = int(stats[8]),
+            away_played = int(stats[10]),
+            home_win_percentage = convert_percentage_to_value(stats[11]),
+            away_win_percentage = convert_percentage_to_value(stats[13]),
+            home_total_goals = int(stats[14]) if stats[14].isdigit() else None,
+            away_total_goals = int(stats[16]) if stats[16].isdigit() else None,
+            home_average_scored = float(stats[17]),
+            away_average_scored = float(stats[19]),
+            home_average_conceded = float(stats[20]),
+            away_average_conceded = float(stats[22]),
+            home_bts_percentage = convert_percentage_to_value(stats[23]),
+            away_bts_percentage = convert_percentage_to_value(stats[25]),
+            home_over_15 = convert_percentage_to_value(stats[30]),
+            away_over_15 = convert_percentage_to_value(stats[32]),
+            home_over_25 = convert_percentage_to_value(stats[33]),
+            away_over_25 = convert_percentage_to_value(stats[35]),
+            ht_home_over_05 = convert_percentage_to_value(stats[36]),
+            ht_away_over_05 = convert_percentage_to_value(stats[38]),
+            ht_home_over_15 = convert_percentage_to_value(stats[39]),
+            ht_away_over_15 = convert_percentage_to_value(stats[41]),
+            home_yellow_cards = int(stats[42]) if stats[42].isdigit() else None,
+            away_yellow_cards = int(stats[44])if stats[44].isdigit() else None,
+            home_total_cards = int(stats[45])if stats[45].isdigit() else None,
+            away_total_cards = int(stats[47])if stats[47].isdigit() else None
         )
         try:
             match.save()
