@@ -21,8 +21,16 @@ from core.models import AccountBalance, BetLink, BetpawaBets, PlacedBets, Betpaw
 from .calculate import analyze_goals, get_date_diff, convert_percentage_to_value
 
 
+import pandas as pd
+import numpy as np
+import os
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import LabelEncoder
+import joblib
+
 class Command(BaseCommand):
-    help = 'Displays current time'
+    help = 'Betpawa Events Scraper'
 
     def add_arguments(self, parser):
         parser.add_argument('--events', type=int, default=30, help='Events Threshold')
@@ -71,12 +79,13 @@ class Betpawa:
         self.min_odds = min_odds
         self.max_odds = max_odds
         time.sleep(2)
-        # self.login()
-        # time.sleep(2)
-        #self.get_account_balance()
+        self.login()
+        time.sleep(2)
+        self.get_account_balance()
 
 
     def login(self):
+        
         self.driver.get("https://www.betpawa.ug/login")
         time.sleep(2)
         self.driver.find_element(By.CSS_SELECTOR,"#login-form-phoneNumber").send_keys("775236691")
@@ -84,7 +93,7 @@ class Betpawa:
         self.driver.find_element(By.CSS_SELECTOR,"#login-form-password-input").send_keys("34454392")
         time.sleep(5)
         self.driver.find_element(By.CSS_SELECTOR,'[data-test-id="logInButton"]').click()
-        time.sleep(2)
+        time.sleep(4)
 
     def get_odds(self,event_link):
         self.driver.get(event_link)
@@ -477,80 +486,92 @@ class Betpawa:
         wait = WebDriverWait(driver, 20)
         driver.get(url)
         time.sleep(2)
-        match_date = driver.find_element(By.CSS_SELECTOR,'.event-header-date').text
-        date_diff, match_time = get_date_diff(match_date)
-        print(match_time)
-        match_particpants = driver.find_elements(By.CSS_SELECTOR,'.event-participant')
-        match_particpants = [participant.text for participant in match_particpants]
-        print(match_particpants)
-        tournament = driver.find_element(By.CSS_SELECTOR,'.event-breadcrumb').text
-        print(tournament)
-        print(match_date,'hours difference = ', date_diff)
-        wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".event-statistics-text")))
-        time.sleep(2)    
-        driver.find_element(By.CSS_SELECTOR,".event-statistics-text").click() # change to wait until
-        wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "[data-test-tab='teamstats']")))
-        time.sleep(1)
-        driver.find_element(By.CSS_SELECTOR,'[data-test-tab="teamstats"]').click()
-        time.sleep(1)
-        stats = driver.find_element(By.CSS_SELECTOR,'.widget-wrapper').text
-        stats = stats.split('\n')
-        print(stats)
-        time.sleep(4)
-        #driver.find_element(By.CSS_SELECTOR,'button.sr-slider-button6.srt-fill-neutral-2.srm-dir-right.srt-fill-text-secondary.sr-hth-inline-slidernavigation__arrow-container-2').click()
-        #time.sleep(1)
-        #stats_two = driver.find_element(By.CSS_SELECTOR,'.widget-wrapper').text
-        #stats_two = stats_two.split('\n')
-        #print(stats_two)
-        match = BetpawaMatch(
-            match_link = url,
-            match_time=match_time,
-            home_team = match_particpants[0],
-            away_team = match_particpants[1],
-            tournament = tournament,
-            home_played = int(stats[8]),
-            away_played = int(stats[10]),
-            home_win_percentage = convert_percentage_to_value(stats[11]),
-            away_win_percentage = convert_percentage_to_value(stats[13]),
-            home_total_goals = int(stats[14]) if stats[14].isdigit() else None,
-            away_total_goals = int(stats[16]) if stats[16].isdigit() else None,
-            home_average_scored = float(stats[17]),
-            away_average_scored = float(stats[19]),
-            home_average_conceded = float(stats[20]),
-            away_average_conceded = float(stats[22]),
-            home_bts_percentage = convert_percentage_to_value(stats[23]),
-            away_bts_percentage = convert_percentage_to_value(stats[25]),
-            home_over_15 = convert_percentage_to_value(stats[30]),
-            away_over_15 = convert_percentage_to_value(stats[32]),
-            home_over_25 = convert_percentage_to_value(stats[33]),
-            away_over_25 = convert_percentage_to_value(stats[35]),
-            ht_home_over_05 = convert_percentage_to_value(stats[36]),
-            ht_away_over_05 = convert_percentage_to_value(stats[38]),
-            ht_home_over_15 = convert_percentage_to_value(stats[39]),
-            ht_away_over_15 = convert_percentage_to_value(stats[41]),
-            home_yellow_cards = int(stats[42]) if stats[42].isdigit() else None,
-            away_yellow_cards = int(stats[44])if stats[44].isdigit() else None,
-            home_total_cards = int(stats[45])if stats[45].isdigit() else None,
-            away_total_cards = int(stats[47])if stats[47].isdigit() else None
-        )
+        print("match url = ", url)
         try:
-            match.save()
-            print(match)
+                
+            match_date = driver.find_element(By.CSS_SELECTOR,'.event-header-date').text
+            date_diff, match_time = get_date_diff(match_date)
+            print(match_time)
+            match_particpants = driver.find_elements(By.CSS_SELECTOR,'.event-participant')
+            match_particpants = [participant.text for participant in match_particpants]
+            print(match_particpants)
+            tournament = driver.find_element(By.CSS_SELECTOR,'.event-breadcrumb').text
+            print(tournament)
+            print(match_date,'hours difference = ', date_diff)
+            wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".event-statistics-text")))
+            time.sleep(2)    
+            driver.find_element(By.CSS_SELECTOR,".event-statistics-text").click() # change to wait until
+            wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "[data-test-tab='teamstats']")))
             time.sleep(1)
+            driver.find_element(By.CSS_SELECTOR,'[data-test-tab="teamstats"]').click()
+            time.sleep(1)
+            stats = driver.find_element(By.CSS_SELECTOR,'.widget-wrapper').text
+            stats = stats.split('\n')
+            print(stats)
+            time.sleep(4)
+            #driver.find_element(By.CSS_SELECTOR,'button.sr-slider-button6.srt-fill-neutral-2.srm-dir-right.srt-fill-text-secondary.sr-hth-inline-slidernavigation__arrow-container-2').click()
+            #time.sleep(1)
+            #stats_two = driver.find_element(By.CSS_SELECTOR,'.widget-wrapper').text
+            #stats_two = stats_two.split('\n')
+            #print(stats_two)
+            match = BetpawaMatch(
+                match_link = url,
+                match_time=match_time,
+                home_team = match_particpants[0],
+                away_team = match_particpants[1],
+                tournament = tournament,
+                home_played = int(stats[8]),
+                away_played = int(stats[10]),
+                home_win_percentage = convert_percentage_to_value(stats[11]),
+                away_win_percentage = convert_percentage_to_value(stats[13]),
+                home_total_goals = int(stats[14]) if stats[14].isdigit() else None,
+                away_total_goals = int(stats[16]) if stats[16].isdigit() else None,
+                home_average_scored = float(stats[17]),
+                away_average_scored = float(stats[19]),
+                home_average_conceded = float(stats[20]),
+                away_average_conceded = float(stats[22]),
+                home_bts_percentage = convert_percentage_to_value(stats[23]),
+                away_bts_percentage = convert_percentage_to_value(stats[25]),
+                home_over_15 = convert_percentage_to_value(stats[30]),
+                away_over_15 = convert_percentage_to_value(stats[32]),
+                home_over_25 = convert_percentage_to_value(stats[33]),
+                away_over_25 = convert_percentage_to_value(stats[35]),
+                ht_home_over_05 = convert_percentage_to_value(stats[36]),
+                ht_away_over_05 = convert_percentage_to_value(stats[38]),
+                ht_home_over_15 = convert_percentage_to_value(stats[39]),
+                ht_away_over_15 = convert_percentage_to_value(stats[41]),
+                home_yellow_cards = int(stats[42]) if stats[42].isdigit() else None,
+                away_yellow_cards = int(stats[44])if stats[44].isdigit() else None,
+                home_total_cards = int(stats[45])if stats[45].isdigit() else None,
+                away_total_cards = int(stats[47])if stats[47].isdigit() else None
+            )
+            try:
+                match.save()
+                print(match)
+                time.sleep(1)
+            except Exception as e:
+                print('Invalid match Data Skipping or duplicate match',e)
+
         except Exception as e:
-            print('Invalid match Data Skipping or duplicate match',e)
+            print("failed to get match data\n\n",e)
     
     def get_account_balance(self):
         driver = self.driver
         wait = WebDriverWait(driver, 20)
-        driver.get('https://www.betpawa.ug/bets/settled')
-        time.sleep(2)
-        balance = driver.find_element(By.CSS_SELECTOR,'.balance').text
-        balance = balance.split(' ')[-1]
-        balance = balance.replace(',','')
-        balance = float(balance)
-        print(" Current balance = ",balance)
-        acc_bal = AccountBalance(day = datetime.now(),amount=balance)
-        acc_bal.save()
+        try:                
+            driver.get('https://www.betpawa.ug/bets/settled')
+            time.sleep(2)
+            balance = driver.find_element(By.CSS_SELECTOR,'.balance').text
+            balance = balance.split(' ')[-1]
+            balance = balance.replace(',','')
+            balance = float(balance)
+            print(" Current balance = ",balance)
+            acc_bal = AccountBalance(day = datetime.now(),amount=balance)
+            acc_bal.save()
+        except Exception as e:
+            print("Account balance",30)
+            balance = 0
         return balance
-
+    
+    def get_model_prediction(self, event_link):
+        pass

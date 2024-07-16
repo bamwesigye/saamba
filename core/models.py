@@ -194,8 +194,15 @@ class BetpawaMatch(models.Model):
     half_time_away_goals = models.PositiveBigIntegerField(_("half_time_away_goals"), null=True, blank=True)
     full_time_home_goals = models.PositiveBigIntegerField(_("full_time_home_goals"), null=True, blank=True)
     full_time_away_goals = models.PositiveBigIntegerField(_("full_time_away_goals"), null=True, blank=True)
-
-
+    home_odds = models.DecimalField(_("Home Odds"), max_digits=5, decimal_places=2)
+    draw_odds = models.DecimalField(_("Draw Odds"), max_digits=5, decimal_places=2)
+    away_odds = models.DecimalField(_("Away Odds"), max_digits=5, decimal_places=2)
+    Over25ft_odds = models.DecimalField(_("Over 2.5 goals Odds"), max_digits=5, decimal_places=2)
+    unde25ft_odds = models.DecimalField(_("Under 2.5 goals Odds"), max_digits=5, decimal_places=2)
+    dc1x_odds = models.DecimalField(_("1x Double Chance odds"), max_digits=5, decimal_places=2)
+    dcx3_odds = models.DecimalField(_("x2 Double Chance odds"), max_digits=5, decimal_places=2)
+    dc12_odds = models.DecimalField(_("12 Double Chance odds"), max_digits=5, decimal_places=2)
+    
 
     class Meta:
         verbose_name = _("betpawamatch")
