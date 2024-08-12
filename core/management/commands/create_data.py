@@ -30,5 +30,4 @@ class Command(BaseCommand):
         event_links = betpawa.get_event_urls('https://www.betpawa.ug/upcoming')
         print("links gotten = ", len(event_links))
         for link in event_links:
-            # betpawa.get_event_data(link)
-            betpawa.get_model_prediction(link)
+            betpawa.get_event_data(link)
