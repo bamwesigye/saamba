@@ -390,12 +390,13 @@ class Betpawa:
         # bet_code = f"{bet_code[2]}"
         # bet_odds = self.driver.find_element(By.CSS_SELECTOR,".side-bar.content").text
         current_time = datetime.now().strftime("%d%m%Y_%H%M%S")
-        file_name = f"betcodes/{bet_code} - {current_time}.txt"
-        with open(file_name, 'a') as file:
-            file.write(f'{bet_code} \n\n\n{bet_code}')
-        self.send_sms(bet_code)
-        print(f"\n\n\n sent {bet_code} \n\n\n")
+        booking_link = f"https://www.betpawa.ug/?bookingCode={bet_code}"
+        csv_file = 'betcodes/betpawa.csv'
+        with open(csv_file, 'a') as file:
+            file.write(f'{bet_code},{booking_link},{current_time}\n')
+        print(f"\n\n\n saved {bet_code} \n\n\n")
         print(f"\n\n\n booking link -  https://www.betpawa.ug/?bookingCode={bet_code} \n\n\n")
+        self.send_sms(booking_link)
         self.driver.get('https://www.betpawa.ug/')
         
     def send_sms(self,bet_code):
@@ -458,7 +459,6 @@ class Betpawa:
         time.sleep(2)
         code = self.driver.find_element(By.CSS_SELECTOR,".clipboard-copy-text-small.copy-text-button").click()
         time.sleep(2)
-        # print(code.text)
         bet_code = pyperclip.paste()
         try:
             self.driver.get('https://www.betpawa.ug/')
@@ -715,6 +715,109 @@ class Betpawa:
                         print("adding 1 to events_counter = ",self.events_counter)
                     else:
                         print("skipped home win")                    
+                if self.events_counter >= self.events_threshold:
+                    self.create_code()
+                    self.place_bet(20)
+                    self.events_counter = 0
+                else:
+                    print("events remaining = ",self.events_threshold-self.events_counter)
+            else:
+                print("Date difference greater than 48 hours")
+
+            print("\n\n\n")
+
+        except Exception as e:
+            print("Something went wrong, Skipping this match", e)
+
+
+    def get_over_model_prediction(self, event_link = 'https://www.betpawa.ug/event/20788041?filter=all',div=0):
+        #load the model
+        model = joblib.load('goals_prediction_model.joblib')
+        le = LabelEncoder()
+        #navigate to page
+        
+        driver = self.driver
+        wait = WebDriverWait(driver, 20)
+        driver = self.driver
+        wait = WebDriverWait(driver, 20)
+        driver.get(event_link)
+        time.sleep(2)
+        print("match url = ", event_link)
+        try:                                
+            match_date = driver.find_element(By.CSS_SELECTOR,'.event-header-date').text
+            date_diff, match_time = get_date_diff(match_date)
+            print(match_time)
+            match_particpants = driver.find_elements(By.CSS_SELECTOR,'.event-participant')
+            match_particpants = [participant.text for participant in match_particpants]
+            print(match_particpants)
+            tournament = driver.find_element(By.CSS_SELECTOR,'.event-breadcrumb').text
+            tournament = tournament.split('/')[-1]
+            print(tournament)
+            print(match_date,'hours difference = ', date_diff)
+            if date_diff <= self.diff :
+                time.sleep(1)
+                bets = driver.find_elements(By.CSS_SELECTOR,'.event-odds')
+                bets = [bet.text for bet in bets]
+                bet1 = bets[0]
+                betx = bets[1]
+                bet2 = bets[2]
+                odd_select = self.driver.find_element(By.XPATH, f"//*[text()='Over/Under | Full Time']/following::span[contains(text(),'Over (2.5)')]")
+                time.sleep(1)
+                odds_value = odd_select.find_element(By.XPATH,"..")
+                odds_value = float(odds_value.text[-4:])
+                beto25 = odds_value
+                time.sleep(2)
+                odd_select = self.driver.find_element(By.XPATH, f"//*[text()='Over/Under | Full Time']/following::span[contains(text(),'Under (2.5)')]")
+                time.sleep(2)
+                odds_value = odd_select.find_element(By.XPATH,"..")
+                odds_value = float(odds_value.text[-4:])
+                betu25 = odds_value
+                # print("match Date = ",match_time.format('%d-%m-%Y'))
+                print("match_time = ",match_time)
+                print("match_particpants = ",match_particpants)
+                print("tournament = ",tournament)
+                print("date_diff = ",date_diff)
+                print("bet1 = ",bet1)
+                print("betx = ",betx)
+                print("bet2 = ",bet2)
+                print("beto25 = ",beto25)
+                print("betu25 = ",betu25)
+
+                match_data = {
+                    'Div': [div],  # Replace with your actual scraped data
+                    'B365H': [bet1],  # Example odds for Home win
+                    'B365D': [betx],  # Example odds for Draw
+                    'B365A': [bet2],  # Example odds for Away win
+                    'B365>2.5': [beto25],  # Example odds for over 2.5 goals
+                    'B365<2.5': [betu25],  # Example odds for under 2.5 goals
+                }
+
+                data = pd.DataFrame(match_data)
+                features = ['Div','B365H', 'B365D', 'B365A', 'B365>2.5', 'B365<2.5']
+                X_new = data[features]
+
+                # Make predictions
+                probabilities = model.predict_proba(X_new)
+                print(probabilities)
+                prediction = model.predict(X_new)
+                print(prediction)
+
+                if prediction == True:
+                    over_prob = probabilities[:, 1]
+                    if over_prob >= 0.65:
+                        self.bet_place(4)
+                        print("adding 1 to events_counter = ",self.events_counter)
+                        self.events_counter += 1
+                    else:
+                        print("Skipped Over 2.5 goals")  
+                if prediction == False:
+                    under_prob = probabilities[:, 0]
+                    if under_prob >= 0.65:
+                        self.bet_place(5)
+                        print("adding 1 to events_counter = ",self.events_counter)
+                        self.events_counter += 1
+                    else:
+                        print("skipped Under 2.5 goals win")    
                 if self.events_counter >= self.events_threshold:
                     self.create_code()
                     self.place_bet(20)

@@ -13,7 +13,7 @@ betcodes/
 myenv/
 data/
 
-# Media files
+# Media files betcodes/betpawa.csv
 media/
 
 # Static files

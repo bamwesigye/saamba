@@ -43,7 +43,8 @@ class EventOddsAdmin(admin.ModelAdmin):
 
 @admin.register(PlacedBets)
 class PlacedBetsAdmin(admin.ModelAdmin):
-    list_display = ['betid','betlink','stake','odds','payout']
+    list_display = ['id','betcode','betlink','stake','odds','payout']
+    list_display_links = ['betcode']
 
 @admin.register(AccountBalance)
 class AccountBalanceAdmin(admin.ModelAdmin):
