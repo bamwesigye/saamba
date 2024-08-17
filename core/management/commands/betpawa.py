@@ -728,6 +728,3 @@ class Betpawa:
 
         except Exception as e:
             print("Something went wrong, Skipping this match", e)
-
-        self.create_code()
-        self.bet_place(20)

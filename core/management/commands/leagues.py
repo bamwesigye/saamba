@@ -36,4 +36,6 @@ class Command(BaseCommand):
             for event_link in events_links:
                 betpawa.get_model_prediction(event_link,div=div_value)
                 time.sleep(2)
+                betpawa.create_code()
+                betpawa.place_bet(20)
 
