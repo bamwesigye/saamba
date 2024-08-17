@@ -14,6 +14,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 
+from core.models import BetLink
+
 
 from .calculate import analyze_goals, get_date_diff
 from .betpawa import Betpawa
@@ -23,11 +25,15 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('--events', type=int, default=30, help='Events Threshold')
-        parser.add_argument('--overs', type=float, default=1.5, help='Overs Threshold')
       
     def handle(self, *args, **kwargs):
         events_threshold = kwargs['events']
-        overs_threshold = kwargs['overs']
-        betpawa = Betpawa(over_threshold=overs_threshold, events_threshold=events_threshold)
-        betpawa.get_upcoming()
-        time.sleep(2)
+        betpawa = Betpawa(over_threshold=2.5, events_threshold=events_threshold)
+        leagues = BetLink.objects.all().order_by('?')
+        for league in leagues:
+            events_links =betpawa.get_event_urls(league.link_url)
+            div_value = league.model_value            
+            for event_link in events_links:
+                betpawa.get_model_prediction(event_link,div=div_value)
+                time.sleep(2)
+

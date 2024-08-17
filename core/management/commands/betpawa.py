@@ -91,8 +91,8 @@ class Betpawa:
         self.max_odds = max_odds
         time.sleep(2)
         self.login()
-        time.sleep(2)
-        self.get_account_balance()
+        # time.sleep(2)
+        # self.get_account_balance()
 
 
     def login(self):
@@ -152,18 +152,15 @@ class Betpawa:
         data = input("scroll down to the end and Press Enter to continue...")
         events = self.driver.find_elements(By.CLASS_NAME,"event-match")
         event_links = [event.get_attribute("href") for event in events]
-        overs_list = [3.5,1.5]            
-        for over in overs_list:
-            self.over_threshold = over
-            for event in event_links:
-                self.get_statistics(event)
-                print(f"{self.events_counter} counted vs {self.events_threshold} ")
-                if self.events_counter > self.events_threshold:
-                    time.sleep(2)
-                    self.create_code()
-                    self.events_counter = 0
-                    self.place_bet(2)
-                    time.sleep(2)
+        for event in event_links:
+            self.get_statistics(event)
+            print(f"{self.events_counter} counted vs {self.events_threshold} ")
+            if self.events_counter > self.events_threshold:
+                time.sleep(2)
+                self.create_code()
+                self.events_counter = 0
+                self.place_bet(2)
+                time.sleep(2)
         self.place_bet(2)
 
     def get_statistics(self, event_link,):
@@ -329,11 +326,40 @@ class Betpawa:
         # 4 over threshold
         # 5 under threshold
         match bet:
+            case 1:
+                try:
+                    odd_select = self.driver.find_elements(By.CSS_SELECTOR,'.event-bet')
+                    time.sleep(1)
+                    odd_select = odd_select[0]
+                    odd_select.click()
+                    time.sleep(1)
+                    odd_text = odd_select.text
+                except:
+                    print("Failed to bet")
+            case 2:
+                try:
+                    odd_select = self.driver.find_elements(By.CSS_SELECTOR,'.event-bet')
+                    time.sleep(1)
+                    odd_select = odd_select[1]
+                    odd_select.click()
+                    time.sleep(1)
+                    odd_text = odd_select.text
+                except:
+                    print("Failed to bet")
+            case 3:
+                try:
+                    odd_select = self.driver.find_elements(By.CSS_SELECTOR,'.event-bet')
+                    time.sleep(1)
+                    odd_select = odd_select[2]
+                    odd_select.click()
+                    time.sleep(1)
+                    odd_text = odd_select.text
+                except:
+                    print("Failed to bet")
             case 4:
                 try:
-                    self.driver.find_element(By.CSS_SELECTOR,"[data-test-id='tabs-goals']").click()
-                    time.sleep(2)
-                    odd_select = self.driver.find_element(By.XPATH,f"//span[contains(text(),'Over ({self.over_threshold})')]")
+                    # Locate and click the "Over 2.5" under Full Time with an exact match
+                    odd_select = self.driver.find_element(By.XPATH, f"//*[text()='Over/Under | Full Time']/following::span[contains(text(),'Over ({self.over_threshold})')]")
                     odd_select.click()
                     time.sleep(1)
                     odd_text = odd_select.text                    
@@ -341,17 +367,16 @@ class Betpawa:
                     print("No bet")            
             case 5:
                 try:
-                    self.driver.find_element(By.CSS_SELECTOR,"[data-test-id='tabs-goals']").click()
-                    time.sleep(2)
-                    odd_select = self.driver.find_element(By.XPATH,f"//span[contains(text(),'Under ({self.over_threshold})')]")
+                    # Locate and click the "under 2.5" under Full Time with an exact match
+                    odd_select = self.driver.find_element(By.XPATH, f"//*[text()='Over/Under | Full Time']/following::span[contains(text(),'Under ({self.over_threshold})')]")
                     odd_select.click()
                     time.sleep(1)
-                    odd_text = odd_select.text
+                    odd_text = odd_select.text   
                 except:
                     print("No bet")
             case _:
+                odd_select= None
                 print('No work here')
-
         return odd_text
 
     def create_code(self):
@@ -370,7 +395,7 @@ class Betpawa:
             file.write(f'{bet_code} \n\n\n{bet_code}')
         self.send_sms(bet_code)
         print(f"\n\n\n sent {bet_code} \n\n\n")
-        print(f"\n\n\n booking link -  betpawa.ug?bookingcode={bet_code} \n\n\n")
+        print(f"\n\n\n booking link -  https://www.betpawa.ug/?bookingCode={bet_code} \n\n\n")
         self.driver.get('https://www.betpawa.ug/')
         
     def send_sms(self,bet_code):
@@ -429,16 +454,15 @@ class Betpawa:
     def place_bet(self, amount=100):
         wait = WebDriverWait(self.driver, 20)
         time.sleep(2)
-        self.driver.find_element(By.XPATH,"//a[contains(text(),'Booking code')]").click()
+        self.driver.find_element(By.XPATH,"//span[contains(text(),'Booking code')]").click()
         time.sleep(2)
-        code = self.driver.find_element(By.CSS_SELECTOR,".table.copy-bets")
+        code = self.driver.find_element(By.CSS_SELECTOR,".clipboard-copy-text-small.copy-text-button").click()
         time.sleep(2)
-        print(code.text)
-        bet_code = code.text.split()
-        bet_code = f"{bet_code[2]}"
-        self.driver.get('https://www.betpawa.ug/')
-        time.sleep(2)
+        # print(code.text)
+        bet_code = pyperclip.paste()
         try:
+            self.driver.get('https://www.betpawa.ug/')
+            time.sleep(2)
             self.driver.find_element(By.CSS_SELECTOR,"#betslip-form-stake-input").click()
             time.sleep(1)
             self.driver.find_element(By.CSS_SELECTOR,"#betslip-form-stake-input").send_keys(amount)
@@ -587,7 +611,7 @@ class Betpawa:
             balance = 0
         return balance
     
-    def get_model_prediction(self, event_link = 'https://www.betpawa.ug/event/20788041?filter=all'):
+    def get_model_prediction(self, event_link = 'https://www.betpawa.ug/event/20788041?filter=all',div=0):
         #load the model
         model = joblib.load('ftr_prediction_model.joblib')
         le = LabelEncoder()
@@ -595,12 +619,12 @@ class Betpawa:
         
         driver = self.driver
         wait = WebDriverWait(driver, 20)
-        try:
-            driver = self.driver
-            wait = WebDriverWait(driver, 20)
-            driver.get(event_link)
-            time.sleep(2)
-            print("match url = ", event_link)                    
+        driver = self.driver
+        wait = WebDriverWait(driver, 20)
+        driver.get(event_link)
+        time.sleep(2)
+        print("match url = ", event_link)
+        try:                                
             match_date = driver.find_element(By.CSS_SELECTOR,'.event-header-date').text
             date_diff, match_time = get_date_diff(match_date)
             print(match_time)
@@ -611,43 +635,99 @@ class Betpawa:
             tournament = tournament.split('/')[-1]
             print(tournament)
             print(match_date,'hours difference = ', date_diff)
-            wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".event-statistics-text")))
-            time.sleep(2)    
-            driver.find_element(By.CSS_SELECTOR,".event-statistics-text").click() # change to wait until
-            wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "[data-test-tab='teamstats']")))
-            time.sleep(1)
-            driver.find_element(By.CSS_SELECTOR,'[data-test-tab="teamstats"]').click()
-            time.sleep(1)
-            bets = driver.find_elements(By.CSS_SELECTOR,'.event-odds')
-            bets = [bet.text for bet in bets]
-            bet1 = bets[0]
-            betx = bets[1]
-            bet2 = bets[2]
-            driver.find_element(By.CSS_SELECTOR,"[data-test-id='tabs-goals']").click()
-            time.sleep(3)
-            odd_select =driver.find_element(By.XPATH,f"//span[contains(text(),'Over 2.5')]")
-            time.sleep(2    )
-            odds_value = odd_select.find_element(By.XPATH,"..")
-            odds_value = float(odds_value.text[-4:])
-            beto25 = odds_value
-            time.sleep(2)
-            odd_select =driver.find_element(By.XPATH,f"//span[contains(text(),'Under 2.5')]")
-            time.sleep(2)
-            odds_value = odd_select.find_element(By.XPATH,"..")
-            odds_value = float(odds_value.text[-4:])
-            betu25 = odds_value
+            if date_diff <= self.diff :
+                time.sleep(1)
+                bets = driver.find_elements(By.CSS_SELECTOR,'.event-odds')
+                bets = [bet.text for bet in bets]
+                bet1 = bets[0]
+                betx = bets[1]
+                bet2 = bets[2]
+                odd_select = self.driver.find_element(By.XPATH, f"//*[text()='Over/Under | Full Time']/following::span[contains(text(),'Over (2.5)')]")
+                time.sleep(1)
+                odds_value = odd_select.find_element(By.XPATH,"..")
+                odds_value = float(odds_value.text[-4:])
+                beto25 = odds_value
+                time.sleep(2)
+                odd_select = self.driver.find_element(By.XPATH, f"//*[text()='Over/Under | Full Time']/following::span[contains(text(),'Under (2.5)')]")
+                time.sleep(2)
+                odds_value = odd_select.find_element(By.XPATH,"..")
+                odds_value = float(odds_value.text[-4:])
+                betu25 = odds_value
+                # print("match Date = ",match_time.format('%d-%m-%Y'))
+                print("match_time = ",match_time)
+                print("match_particpants = ",match_particpants)
+                print("tournament = ",tournament)
+                print("date_diff = ",date_diff)
+                print("bet1 = ",bet1)
+                print("betx = ",betx)
+                print("bet2 = ",bet2)
+                print("beto25 = ",beto25)
+                print("betu25 = ",betu25)
 
-            print("match Date = ",match_time.format('%d-%m-%Y'))
-            print("match_time = ",match_time)
-            print("match_particpants = ",match_particpants)
-            print("tournament = ",tournament)
-            print("date_diff = ",date_diff)
-            print("bet1 = ",bet1)
-            print("betx = ",betx)
-            print("bet2 = ",bet2)
-            print("beto25 = ",beto25)
-            print("betu25 = ",betu25)
+                match_data = {
+                    'Div': [div],  # Replace with your actual scraped data
+                    'B365H': [bet1],  # Example odds for Home win
+                    'B365D': [betx],  # Example odds for Draw
+                    'B365A': [bet2],  # Example odds for Away win
+                    'B365>2.5': [beto25],  # Example odds for over 2.5 goals
+                    'B365<2.5': [betu25],  # Example odds for under 2.5 goals
+                }
 
-            print(bets)
-        except Exception as e: 
-            print("Model prediction failed",e)
+                data = pd.DataFrame(match_data)
+                features = ['Div','B365H', 'B365D', 'B365A', 'B365>2.5', 'B365<2.5']
+                X_new = data[features]
+
+                # Make predictions
+                probabilities = model.predict_proba(X_new)
+                print(probabilities)
+                prediction = model.predict(X_new)
+                print(prediction)
+
+                if prediction == 'A':
+                    away_prob = probabilities[:, 0]
+                    print(f"Away win - {away_prob}")
+                    if away_prob >= 0.55:
+                        self.bet_place(3)
+                        print("adding 1 to events_counter = ",self.events_counter)
+                        self.events_counter += 1
+
+                    else:
+                        print("skipped away win")
+                    
+                    
+                if prediction == 'D':
+                    draw_prob = probabilities[:, 1]
+                    print(f"Draw - {draw_prob}")
+                    if draw_prob >= 0.55:
+                        self.bet_place(2)
+                        self.events_counter += 1
+                        print("adding 1 to events_counter = ",self.events_counter)
+
+                    else:
+                        print("skipped draw")
+
+                if prediction == 'H':
+                    home_prob = probabilities[:, 2]
+                    print(f"Home win - {home_prob}")
+                    if home_prob >= 0.55:
+                        self.bet_place(1)
+                        self.events_counter += 1
+                        print("adding 1 to events_counter = ",self.events_counter)
+                    else:
+                        print("skipped home win")                    
+                if self.events_counter >= self.events_threshold:
+                    self.create_code()
+                    self.place_bet(20)
+                    self.events_counter = 0
+                else:
+                    print("events remaining = ",self.events_threshold-self.events_counter)
+            else:
+                print("Date difference greater than 48 hours")
+
+            print("\n\n\n")
+
+        except Exception as e:
+            print("Something went wrong, Skipping this match", e)
+
+        self.create_code()
+        self.bet_place(20)

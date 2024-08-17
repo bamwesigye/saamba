@@ -27,7 +27,7 @@ class Command(BaseCommand):
         events_threshold = kwargs['events']
         overs_threshold = kwargs['overs']
         betpawa = Betpawa(events_threshold, overs_threshold)
-        event_links = betpawa.get_event_urls('https://www.betpawa.ug/upcoming')
+        event_links = betpawa.get_event_urls('https://www.betpawa.ug/group/12334?marketId=_1X2&competitions=12334&categoryId=2')
         print("links gotten = ", len(event_links))
         for link in event_links:
-            betpawa.get_model_prediction(link)
+            betpawa.get_model_prediction(link,)

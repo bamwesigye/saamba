@@ -82,9 +82,13 @@ class Command(BaseCommand):
         df['HomeTeam'] = le.fit_transform(df['HomeTeam'])
         df['AwayTeam'] = le.fit_transform(df['AwayTeam'])
         df['Div'] = le.fit_transform(df['Div'])
+        # Get the mapping of original values to encoded values
+        mapping = dict(zip(le.classes_, le.transform(le.classes_)))
+
+        print(mapping)
         
         features = ['HomeTeam', 'AwayTeam', 'DayOfWeek', 'Month', 'B365H', 'B365D', 'B365A', 'B365>2.5', 'B365<2.5']
-        features = ['Div','DayOfWeek', 'B365H', 'B365D', 'B365A', 'B365>2.5', 'B365<2.5']
+        features = ['Div','B365H', 'B365D', 'B365A', 'B365>2.5', 'B365<2.5']
         X = df[features]
         y = df['FTR']
         

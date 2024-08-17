@@ -16,7 +16,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('--events', type=int, default=30, help='Events Threshold')
-        parser.add_argument('--overs', type=float, default=1.5, help='Overs Threshold')
+        parser.add_argument('--overs', type=float, default=2.5, help='Overs Threshold')
         parser.add_argument('--diff', type=int, default=3, help='Overs Threshold')
         parser.add_argument('--tickets', type=int, default=5, help='number of bets per gane')
         parser.add_argument('--min_odds', type=float, default=1.2, help='Minimum Odds')
@@ -27,8 +27,9 @@ class Command(BaseCommand):
         events_threshold = kwargs['events']
         overs_threshold = kwargs['overs']
         betpawa = Betpawa(events_threshold, overs_threshold)
-        event_links = betpawa.get_event_urls('https://www.betpawa.ug/upcoming')
-        print("links gotten = ", len(event_links))
-        for link in event_links:
-            # betpawa.get_event_data(link)
-            betpawa.get_model_prediction(link)
+        betpawa.get_statistics(event_link='https://www.betpawa.ug/event/20885134?filter=all')
+        # event_links = betpawa.get_event_urls('https://www.betpawa.ug/upcoming')
+        # print("links gotten = ", len(event_links))
+        # for link in event_links:
+        #     # betpawa.get_event_data(link)
+        #     betpawa.get_model_prediction(link)

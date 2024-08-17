@@ -11,8 +11,9 @@ class BetpawaBetsAdmin(admin.ModelAdmin):
     list_editable = ['is_placed']
 @admin.register(BetLink)
 class BetLinkAdmin(admin.ModelAdmin):
-    list_display = ['link_url','league','country', 'order','Level']
-    list_editable = ['Level', 'order']
+    list_display_links = ['league_code']
+    list_display = ['league_code','link_url','league','model_value','country', 'order','Level']
+    list_editable = ['league','country', 'order','Level','model_value']
     search_fields = ['league','country']
     
 @admin.register(Selections)

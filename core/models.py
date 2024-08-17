@@ -51,14 +51,16 @@ class Bookmakers(models.Model):
 
 class BetLink(models.Model):
 
+    league_code = models.CharField(_("league Code"), max_length=50)
     link_url = models.URLField(_("link"), max_length=200)
     league = models.CharField(_("league"), max_length=50)
     country = models.CharField(_("Country"), max_length=50)
     Level = models.CharField(_("Level"), max_length=50)
     order = models.FloatField(_("order"), default=2.0)
+    model_value = models.IntegerField(_("model_value"), default=0)
 
     class Meta:
-        ordering = ['order']
+        ordering = ['league_code']
         verbose_name = _("Betlink")
         verbose_name_plural = _("Betlinks")
 
