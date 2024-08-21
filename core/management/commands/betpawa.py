@@ -222,7 +222,6 @@ class Betpawa:
                     self.events_counter = self.events_counter + 1
                     try:
                         match_bet.save()
-                        self.create_code()
                     except Exception as e:
                         print(e)
                 elif result <- 3.1 :
@@ -234,7 +233,6 @@ class Betpawa:
                     print(f" Under {self.over_threshold} selected, adding 1 to the counter")
                     try:
                         match_bet.save()
-                        self.create_code()
                     except Exception as e:
                         print(e)                    
                 else:
@@ -452,7 +450,7 @@ class Betpawa:
         except(requests.ConnectionError, requests.Timeout) as exception:
             print("Check your internet connection")
 
-    def place_bet(self, amount=100):
+    def place_bet(self, amount=200):
         wait = WebDriverWait(self.driver, 20)
         time.sleep(2)
         self.driver.find_element(By.XPATH,"//span[contains(text(),'Booking code')]").click()
@@ -717,7 +715,7 @@ class Betpawa:
                         print("skipped home win")                    
                 if self.events_counter >= self.events_threshold:
                     self.create_code()
-                    self.place_bet(20)
+                    self.place_bet()
                     self.events_counter = 0
                 else:
                     print("events remaining = ",self.events_threshold-self.events_counter)
@@ -820,7 +818,7 @@ class Betpawa:
                         print("skipped Under 2.5 goals win")    
                 if self.events_counter >= self.events_threshold:
                     self.create_code()
-                    self.place_bet(20)
+                    self.place_bet()
                     self.events_counter = 0
                 else:
                     print("events remaining = ",self.events_threshold-self.events_counter)
