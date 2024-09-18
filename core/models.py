@@ -224,7 +224,7 @@ class AccountBalance(models.Model):
 
     class Meta:
         verbose_name = _("accountbalance")
-        verbose_name_plural = _("accountbalances")
+        verbose_name_plural = _("accoGBWEX3Huntbalances")
 
     def __str__(self):
         return f"{self.day} - {self.amount}"

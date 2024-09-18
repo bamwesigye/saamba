@@ -396,6 +396,7 @@ class Betpawa:
         print(f"\n\n\n booking link -  https://www.betpawa.ug/?bookingCode={bet_code} \n\n\n")
         self.send_sms(booking_link)
         self.driver.get('https://www.betpawa.ug/')
+        return bet_code
         
     def send_sms(self,bet_code):
         # Send the code to the sms api
@@ -450,14 +451,9 @@ class Betpawa:
         except(requests.ConnectionError, requests.Timeout) as exception:
             print("Check your internet connection")
 
-    def place_bet(self, amount=200):
+    def place_bet(self, amount=200, betcode=None):
+        bet_code = betcode
         wait = WebDriverWait(self.driver, 20)
-        time.sleep(2)
-        self.driver.find_element(By.XPATH,"//span[contains(text(),'Booking code')]").click()
-        time.sleep(2)
-        code = self.driver.find_element(By.CSS_SELECTOR,".clipboard-copy-text-small.copy-text-button").click()
-        time.sleep(2)
-        bet_code = pyperclip.paste()
         try:
             self.driver.get('https://www.betpawa.ug/')
             time.sleep(2)
@@ -714,8 +710,8 @@ class Betpawa:
                     else:
                         print("skipped home win")                    
                 if self.events_counter >= self.events_threshold:
-                    self.create_code()
-                    self.place_bet()
+                    betcode = self.create_code()
+                    self.place_bet(betcode=betcode)
                     self.events_counter = 0
                 else:
                     print("events remaining = ",self.events_threshold-self.events_counter)
@@ -817,8 +813,8 @@ class Betpawa:
                     else:
                         print("skipped Under 2.5 goals win")    
                 if self.events_counter >= self.events_threshold:
-                    self.create_code()
-                    self.place_bet()
+                    betcode = self.create_code()
+                    self.place_bet(betcode=betcode)
                     self.events_counter = 0
                 else:
                     print("events remaining = ",self.events_threshold-self.events_counter)
