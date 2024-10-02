@@ -159,9 +159,9 @@ class Betpawa:
                 time.sleep(2)
                 self.create_code()
                 self.events_counter = 0
-                self.place_bet(2)
+                self.place_bet(200)
                 time.sleep(2)
-        self.place_bet(2)
+        self.place_bet(200)
 
     def get_statistics(self, event_link,):
         driver = self.driver
@@ -397,7 +397,7 @@ class Betpawa:
         self.send_sms(booking_link)
         self.driver.get('https://www.betpawa.ug/')
         return bet_code
-        
+        34454392  
     def send_sms(self,bet_code):
         # Send the code to the sms api
         url = "https://www.egosms.co/api/v1/plain/"
@@ -490,11 +490,11 @@ class Betpawa:
             events_counter = 0
             for event in events_to_place:
                 self.driver.get(event.event_link)
+                print(f"\n\n\nplacing:  {event.selection} \n\n\n")
                 time.sleep(3)
                 try:
-                    self.driver.find_element(By.CSS_SELECTOR,"[data-test-id='tabs-goals']").click()
                     time.sleep(3)
-                    odd_select = self.driver.find_element(By.XPATH,f"//span[contains(text(),'{event.selection}')]")
+                    odd_select = self.driver.find_element(By.XPATH, f"//*[text()='Over/Under | Full Time']/following::span[contains(text(),{event.selection})]")
                     odds_value = odd_select.find_element(By.XPATH,"..")
                     odds_value = float(odds_value.text[-4:])
                     print(event.event_match, " - ", event.selection, "odds=", odds_value)
@@ -605,7 +605,7 @@ class Betpawa:
             balance = 0
         return balance
     
-    def get_model_prediction(self, event_link = 'https://www.betpawa.ug/event/20788041?filter=all',div=0):
+    def get_model_prediction(self, event_link,div=0):
         #load the model
         model = joblib.load('ftr_prediction_model.joblib')
         le = LabelEncoder()
@@ -647,6 +647,7 @@ class Betpawa:
                 odds_value = odd_select.find_element(By.XPATH,"..")
                 odds_value = float(odds_value.text[-4:])
                 betu25 = odds_value
+                Day = match_time.weekday()
                 # print("match Date = ",match_time.format('%d-%m-%Y'))
                 print("match_time = ",match_time)
                 print("match_particpants = ",match_particpants)
@@ -660,13 +661,13 @@ class Betpawa:
 
                 match_data = {
                     'Div': [div],  # Replace with your actual scraped data
+                    'DayOfWeek': [Day],
                     'B365H': [bet1],  # Example odds for Home win
                     'B365D': [betx],  # Example odds for Draw
                     'B365A': [bet2],  # Example odds for Away win
                     'B365>2.5': [beto25],  # Example odds for over 2.5 goals
                     'B365<2.5': [betu25],  # Example odds for under 2.5 goals
                 }
-
                 data = pd.DataFrame(match_data)
                 features = ['Div','B365H', 'B365D', 'B365A', 'B365>2.5', 'B365<2.5']
                 X_new = data[features]
@@ -680,30 +681,25 @@ class Betpawa:
                 if prediction == 'A':
                     away_prob = probabilities[:, 0]
                     print(f"Away win - {away_prob}")
-                    if away_prob >= 0.55:
+                    if away_prob >= 0.5:
                         self.bet_place(3)
                         print("adding 1 to events_counter = ",self.events_counter)
                         self.events_counter += 1
-
                     else:
-                        print("skipped away win")
-                    
-                    
+                        print("skipped away win")               
                 if prediction == 'D':
                     draw_prob = probabilities[:, 1]
                     print(f"Draw - {draw_prob}")
-                    if draw_prob >= 0.55:
+                    if draw_prob >= 0.5:
                         self.bet_place(2)
                         self.events_counter += 1
                         print("adding 1 to events_counter = ",self.events_counter)
-
                     else:
                         print("skipped draw")
-
                 if prediction == 'H':
                     home_prob = probabilities[:, 2]
                     print(f"Home win - {home_prob}")
-                    if home_prob >= 0.55:
+                    if home_prob >= 0.5:
                         self.bet_place(1)
                         self.events_counter += 1
                         print("adding 1 to events_counter = ",self.events_counter)
@@ -717,16 +713,14 @@ class Betpawa:
                     print("events remaining = ",self.events_threshold-self.events_counter)
             else:
                 print("Date difference greater than 48 hours")
-
             print("\n\n\n")
-
         except Exception as e:
             print("Something went wrong, Skipping this match", e)
 
 
-    def get_over_model_prediction(self, event_link = 'https://www.betpawa.ug/event/20788041?filter=all',div=0):
+    def get_over_model_prediction(self, event_link,div=0):
         #load the model
-        model = joblib.load('goals_prediction_model.joblib')
+        model = joblib.load('goals_prediction_model_accuracy.joblib')
         le = LabelEncoder()
         #navigate to page
         
@@ -766,6 +760,8 @@ class Betpawa:
                 odds_value = odd_select.find_element(By.XPATH,"..")
                 odds_value = float(odds_value.text[-4:])
                 betu25 = odds_value
+                Day = match_time.weekday()
+                print("Day of the week value = ",Day)
                 # print("match Date = ",match_time.format('%d-%m-%Y'))
                 print("match_time = ",match_time)
                 print("match_particpants = ",match_particpants)
@@ -779,17 +775,17 @@ class Betpawa:
 
                 match_data = {
                     'Div': [div],  # Replace with your actual scraped data
-                    'B365H': [bet1],  # Example odds for Home win
-                    'B365D': [betx],  # Example odds for Draw
-                    'B365A': [bet2],  # Example odds for Away win
-                    'B365>2.5': [beto25],  # Example odds for over 2.5 goals
-                    'B365<2.5': [betu25],  # Example odds for under 2.5 goals
+                    'DayOfWeek': [Day],
+                    'home_odds': [bet1],  # Example odds for Home win
+                    'draw_odds': [betx],  # Example odds for Draw
+                    'away_odds': [bet2],  # Example odds for Away win
+                    'over25_odds': [beto25],  # Example odds for over 2.5 goals
+                    'under25_odds': [betu25],  # Example odds for under 2.5 goals
                 }
 
                 data = pd.DataFrame(match_data)
-                features = ['Div','B365H', 'B365D', 'B365A', 'B365>2.5', 'B365<2.5']
+                features = ['Div','home_odds', 'draw_odds', 'away_odds', 'over25_odds', 'under25_odds']
                 X_new = data[features]
-
                 # Make predictions
                 probabilities = model.predict_proba(X_new)
                 print(probabilities)
@@ -798,7 +794,7 @@ class Betpawa:
 
                 if prediction == True:
                     over_prob = probabilities[:, 1]
-                    if over_prob >= 0.65:
+                    if over_prob >= 0.5:
                         self.bet_place(4)
                         print("adding 1 to events_counter = ",self.events_counter)
                         self.events_counter += 1
@@ -806,7 +802,7 @@ class Betpawa:
                         print("Skipped Over 2.5 goals")  
                 if prediction == False:
                     under_prob = probabilities[:, 0]
-                    if under_prob >= 0.65:
+                    if under_prob >= 0.5:
                         self.bet_place(5)
                         print("adding 1 to events_counter = ",self.events_counter)
                         self.events_counter += 1
@@ -820,8 +816,6 @@ class Betpawa:
                     print("events remaining = ",self.events_threshold-self.events_counter)
             else:
                 print("Date difference greater than 48 hours")
-
             print("\n\n\n")
-
         except Exception as e:
             print("Something went wrong, Skipping this match", e)

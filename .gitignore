@@ -13,6 +13,7 @@ betcodes/
 myenv/
 saamba_env/
 data/
+.csv
 
 # Media files betcodes/betpawa.csv
 media/
@@ -25,7 +26,7 @@ venv/
 env/
 .venv/
 .vscode/
-
+*.jonlib
 # IDE-specific files
 *.idea/
 *.vscode/

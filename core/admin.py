@@ -9,6 +9,7 @@ class BetpawaBetsAdmin(admin.ModelAdmin):
     list_display = ['event_time','event_link','event_match','event_tournament','selection','is_placed']
     list_filter= ['event_time','selection','event_tournament','is_placed']
     list_editable = ['is_placed']
+
 @admin.register(BetLink)
 class BetLinkAdmin(ImportExportModelAdmin):
     list_display_links = ['league_code']
