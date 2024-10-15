@@ -16,6 +16,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
 from sklearn.ensemble import AdaBoostClassifier
+from sklearn.calibration import CalibratedClassifierCV
 
 import joblib
 from sklearn.tree import DecisionTreeClassifier
@@ -139,7 +140,8 @@ class Command(BaseCommand):
         for name_model, model in models.items():            
             print("\n")
             print("Model:", name_model)
-
+            # calibrate the model
+            model = CalibratedClassifierCV(model, cv=5, method='isotonic')
             # Train the model
             model.fit(X_train, y_train)
             accuracy = model.score(X_test, y_test)

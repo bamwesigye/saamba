@@ -13,9 +13,6 @@ from sklearn.metrics import classification_report
 from sklearn import neighbors, preprocessing
 from xgboost import XGBClassifier
 from sklearn.neighbors import KNeighborsClassifier
-
-
-
 import joblib
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
@@ -96,9 +93,10 @@ class Command(BaseCommand):
         
         print(mapping)        
         features = ['HomeTeam', 'AwayTeam', 'DayOfWeek', 'Month', 'B365H', 'B365D', 'B365A', 'B365>2.5', 'B365<2.5']
-        features = ['Div','DayOfWeek','Month', 'home_odds', 'draw_odds', 'away_odds', 'over25_odds', 'under25_odds']
+        features = ['Div', 'home_odds', 'draw_odds', 'away_odds', 'over25_odds', 'under25_odds']
         X = df[features]
         y = df['FTR']
+        y = y.map({'H': 1, 'D': 0, 'A': -1})
         return X, y, df
 
     def train_and_save_model(self, X, y, model_name, df):
@@ -114,15 +112,16 @@ class Command(BaseCommand):
             'RandomForest10': RandomForestClassifier(n_estimators=10, random_state=42),
             'RandomForest100': RandomForestClassifier(n_estimators=100, random_state=42),
             'RandomForest500': RandomForestClassifier(n_estimators=500, random_state=42),
-            'AdaBoost': AdaBoostClassifier(n_estimators=100, learning_rate=0.5),
+            # 'AdaBoost': AdaBoostClassifier(n_estimators=100, learning_rate=0.5),
             'XGBoost': XGBClassifier(n_estimators=200, learning_rate=0.1, max_depth=5, colsample_bytree=0.8),
             'GradientBoosting': GradientBoostingClassifier(n_estimators=200, learning_rate=0.1, max_depth=5, random_state=42),
             'DecisionTree': DecisionTreeClassifier(max_depth=10, max_features='sqrt'),
-            # 'SVM': SVC(C=1.0, kernel='rbf', gamma='scale', probability=True),
+            'SVM': SVC(C=1.0, kernel='rbf', gamma='scale', probability=True),
             'NaiveBayes' : GaussianNB(),
             'LogisticRegression': LogisticRegression(solver='liblinear', C=1.0),
             'GaussianNB': GaussianNB()
         }
+
         best_score_accuracy = -1000000
         best_model_accuracy = None
         best_model_name_accuracy = None

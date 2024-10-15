@@ -394,7 +394,7 @@ class Betpawa:
             file.write(f'{bet_code},{booking_link},{current_time}\n')
         print(f"\n\n\n saved {bet_code} \n\n\n")
         print(f"\n\n\n booking link -  https://www.betpawa.ug/?bookingCode={bet_code} \n\n\n")
-        self.send_sms(booking_link)
+        # self.send_sms(booking_link)
         self.driver.get('https://www.betpawa.ug/')
         return bet_code
         34454392  
@@ -607,7 +607,7 @@ class Betpawa:
     
     def get_model_prediction(self, event_link,div=0):
         #load the model
-        model = joblib.load('ftr_prediction_model.joblib')
+        model = joblib.load('ftr_prediction_model_accuracy.joblib')
         le = LabelEncoder()
         #navigate to page
         
@@ -662,14 +662,14 @@ class Betpawa:
                 match_data = {
                     'Div': [div],  # Replace with your actual scraped data
                     'DayOfWeek': [Day],
-                    'B365H': [bet1],  # Example odds for Home win
-                    'B365D': [betx],  # Example odds for Draw
-                    'B365A': [bet2],  # Example odds for Away win
-                    'B365>2.5': [beto25],  # Example odds for over 2.5 goals
-                    'B365<2.5': [betu25],  # Example odds for under 2.5 goals
+                    'home_odds': [bet1],  # Example odds for Home win
+                    'draw_odds': [betx],  # Example odds for Draw
+                    'away_odds': [bet2],  # Example odds for Away win
+                    'over25_odds': [beto25],  # Example odds for over 2.5 goals
+                    'under25_odds': [betu25],  # Example odds for under 2.5 goals
                 }
                 data = pd.DataFrame(match_data)
-                features = ['Div','B365H', 'B365D', 'B365A', 'B365>2.5', 'B365<2.5']
+                features = ['Div', 'home_odds', 'draw_odds', 'away_odds', 'over25_odds', 'under25_odds']
                 X_new = data[features]
 
                 # Make predictions
@@ -678,16 +678,16 @@ class Betpawa:
                 prediction = model.predict(X_new)
                 print(prediction)
 
-                if prediction == 'A':
+                if prediction == -1:
                     away_prob = probabilities[:, 0]
                     print(f"Away win - {away_prob}")
-                    if away_prob >= 0.5:
+                    if away_prob >= 0.3:
                         self.bet_place(3)
                         print("adding 1 to events_counter = ",self.events_counter)
                         self.events_counter += 1
                     else:
                         print("skipped away win")               
-                if prediction == 'D':
+                if prediction == 0:
                     draw_prob = probabilities[:, 1]
                     print(f"Draw - {draw_prob}")
                     if draw_prob >= 0.5:
@@ -696,7 +696,7 @@ class Betpawa:
                         print("adding 1 to events_counter = ",self.events_counter)
                     else:
                         print("skipped draw")
-                if prediction == 'H':
+                if prediction == 1:
                     home_prob = probabilities[:, 2]
                     print(f"Home win - {home_prob}")
                     if home_prob >= 0.5:
