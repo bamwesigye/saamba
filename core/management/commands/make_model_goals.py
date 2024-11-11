@@ -121,14 +121,14 @@ class Command(BaseCommand):
             'RandomForest10': RandomForestClassifier(n_estimators=10, random_state=42),
             'RandomForest100': RandomForestClassifier(n_estimators=100, random_state=42),
             'RandomForest500': RandomForestClassifier(n_estimators=500, random_state=42),
-            'AdaBoost': AdaBoostClassifier(n_estimators=100, learning_rate=0.5),
-            'XGBoost': XGBClassifier(n_estimators=200, learning_rate=0.1, max_depth=5, colsample_bytree=0.8),
-            'GradientBoosting': GradientBoostingClassifier(n_estimators=200, learning_rate=0.1, max_depth=5, random_state=42),
-            'DecisionTree': DecisionTreeClassifier(max_depth=10, max_features='sqrt'),
-            'SVM': SVC(C=1.0, kernel='rbf', gamma='scale', probability=True),
+            # 'AdaBoost': AdaBoostClassifier(n_estimators=100, learning_rate=0.5),
+            # 'XGBoost': XGBClassifier(n_estimators=200, learning_rate=0.1, max_depth=5, colsample_bytree=0.8),
+            # 'GradientBoosting': GradientBoostingClassifier(n_estimators=200, learning_rate=0.1, max_depth=5, random_state=42),
+            # 'DecisionTree': DecisionTreeClassifier(max_depth=10, max_features='sqrt'),
+            # 'SVM': SVC(C=1.0, kernel='rbf', gamma='scale', probability=True),
             'NaiveBayes' : GaussianNB(),
-            'LogisticRegression': LogisticRegression(solver='liblinear', multi_class='ovr', C=1.0),
-            'GaussianNB': GaussianNB()
+            # 'LogisticRegression': LogisticRegression(solver='liblinear', multi_class='ovr', C=1.0),
+            # 'GaussianNB': GaussianNB()
         }
         best_accuracy = -1000000
         best_model_accuracy = None

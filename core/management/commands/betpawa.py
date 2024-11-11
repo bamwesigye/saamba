@@ -163,6 +163,31 @@ class Betpawa:
                 time.sleep(2)
         self.place_bet(200)
 
+
+    def get_headtohead(self, event_link):
+        driver = self.driver
+        driver.set_window_size(1080,800)
+        wait = WebDriverWait(driver, 20)
+        driver.get(event_link)
+        time.sleep(2)
+        match_date = driver.find_element(By.CSS_SELECTOR,'.event-header-date').text
+        date_diff, match_day = get_date_diff(match_date)
+        print(match_date,'hours difference = ', date_diff)
+        if date_diff <= self.diff :
+            wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".event-statistics-text")))
+            time.sleep(2)    
+            driver.find_element(By.CSS_SELECTOR,".event-statistics-text").click() # change to wait until
+            time.sleep(5)
+            driver.find_element(By.CSS_SELECTOR,'[data-test-tab="headtohead"]').click()
+            time.sleep(5)
+            driver.find_element(By.CSS_SELECTOR,'button.sr-slider-button6.srt-fill-neutral-2.srm-dir-right.srt-fill-text-secondary.sr-hth-inline-slidernavigation__arrow-container-2').click()
+            time.sleep(5)
+            teamsaverages = driver.find_element(By.CSS_SELECTOR,'sr-hth-0-teamsaverages__item-value').text
+
+            goalput = input("scroll down to the end and Press Enter to continue...")
+        else:
+            print("Event too far away")
+
     def get_statistics(self, event_link,):
         driver = self.driver
         driver.set_window_size(1080,800)
