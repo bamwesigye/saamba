@@ -8,12 +8,12 @@
 *.sqlite3
 *.db
 *.log
-
+*.xlsx
 betcodes/
 myenv/
 saamba_env/
 data/
-.csv
+*.csv
 
 # Media files betcodes/betpawa.csv
 media/

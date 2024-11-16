@@ -37,6 +37,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f'Starting model training with data from {data_folder}'))
 
         df = self.load_data(data_folder)
+        df.to_excel('data_goals.xlsx', index=False)
         X, y, df = self.preprocess_data(df)
         
         model, X_test, y_test = self.train_and_save_model(X, y, 'goals_prediction_model', df=df)
