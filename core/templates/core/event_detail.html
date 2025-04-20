@@ -1,0 +1,191 @@
+{% extends 'core/base.html' %}
+{% load custom_filters %}
+
+{% block title %}{{ event.home_team }} vs {{ event.away_team }} - Saamba{% endblock %}
+
+{% block extra_head %}
+<style>
+    .tab-content {
+        display: none;
+    }
+    .tab-content.active {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow-md rounded-lg overflow-hidden">
+    <!-- Event Header -->
+    <div class="p-4 md:p-6 bg-gradient-to-r from-primary to-blue-800 text-white">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold">{{ event.home_team }} vs {{ event.away_team }}</h1>
+                <p class="text-sm md:text-base mt-2">
+                    {{ event.tournament }} | {{ event.event_time|date:"D, d M Y H:i" }}
+                </p>
+            </div>
+            <a href="{{ event.event_link }}" target="_blank" class="mt-4 md:mt-0 bg-white text-primary hover:bg-blue-100 py-2 px-4 rounded-lg font-medium text-sm transition-colors">
+                Event Link
+            </a>
+        </div>
+    </div>
+
+    <!-- Bookmaker Tabs -->
+    <div class="px-4 md:px-6 pt-4 border-b">
+        <div class="flex overflow-x-auto pb-2 space-x-2">
+            {% for bookmaker in bookmakers %}
+                <button data-tab="bookmaker-{{ bookmaker.id }}" class="bookmaker-tab py-2 px-4 text-sm font-medium rounded-t-lg {% if forloop.first %}bg-blue-100 text-primary active{% else %}hover:bg-gray-100 text-gray-500{% endif %} transition-colors">
+                    {{ bookmaker.name }}
+                </button>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Selection Panels by Bookmaker -->
+    <div class="p-4 md:p-6">
+        {% for bookmaker in bookmakers %}
+            <div id="bookmaker-{{ bookmaker.id }}" class="tab-content {% if forloop.first %}active{% endif %}">
+                <h2 class="text-xl font-semibold mb-4">{{ bookmaker.name }} Selections</h2>
+                
+                {% if messages %}
+                    <div class="mb-4">
+                        {% for message in messages %}
+                            <div class="{% if message.tags == 'success' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %} p-3 rounded-lg">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for selection_data in selections_with_odds %}
+                        {% with selection=selection_data.selection bookmaker_data=selection_data.bookmaker_odds|get_item:bookmaker.id %}
+                            <div class="bg-gray-50 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <h3 class="font-medium text-gray-900">{{ selection.selection.selection }}</h3>
+                                        <p class="text-xs text-gray-500">{{ selection.selection.market.market }}</p>
+                                    </div>
+                                    {% if selection.is_settled %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            Settled
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Current Odds and Form -->
+                                <div class="mt-4">
+                                    {% if bookmaker_data.latest_odd %}
+                                        <div class="flex items-center justify-between mb-2">
+                                            <span class="text-sm text-gray-500">Current Odds:</span>
+                                            <span class="font-bold text-lg text-primary">{{ bookmaker_data.latest_odd.odd }}</span>
+                                        </div>
+                                        <div class="text-xs text-gray-500 mb-3">
+                                            Last updated: {{ bookmaker_data.latest_odd.entered_at|date:"d M Y H:i" }}
+                                        </div>
+                                    {% else %}
+                                        <div class="text-sm text-gray-500 mb-3">No odds available yet</div>
+                                    {% endif %}
+                                    
+                                    <form method="post" class="flex space-x-2">
+                                        {% csrf_token %}
+                                        {{ bookmaker_data.form.event_selection }}
+                                        {{ bookmaker_data.form.bookmaker }}
+                                        <div class="flex-1">
+                                            <input 
+                                                type="number" 
+                                                name="odd" 
+                                                step="0.001" 
+                                                placeholder="New Odds" 
+                                                class="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary text-sm"
+                                                required
+                                            >
+                                        </div>
+                                        <button type="submit" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm">
+                                            Update
+                                        </button>
+                                    </form>
+                                </div>
+                                
+                                <!-- Odds History -->
+                                {% if bookmaker_data.history %}
+                                    <div class="mt-4">
+                                        <h4 class="text-sm font-semibold text-gray-700 mb-2">Odds History</h4>
+                                        <div class="bg-white border border-gray-200 rounded-md p-3 max-h-60 overflow-y-auto shadow-sm">
+                                            <table class="min-w-full text-xs divide-y divide-gray-200">
+                                                <thead>
+                                                    <tr class="bg-gray-50">
+                                                        <th class="px-3 py-2 text-left font-medium text-gray-700">Date</th>
+                                                        <th class="px-3 py-2 text-right font-medium text-gray-700">Odds</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-gray-200">
+                                                    {% for odd in bookmaker_data.history %}
+                                                        <tr class="{% if forloop.first %}bg-blue-50{% endif %} hover:bg-gray-50">
+                                                            <td class="px-3 py-2 whitespace-nowrap">{{ odd.entered_at|date:"d M Y H:i" }}</td>
+                                                            <td class="px-3 py-2 text-right font-medium {% if forloop.first %}text-primary{% endif %}">{{ odd.odd }}</td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="mt-4">
+                                        <h4 class="text-sm font-semibold text-gray-700 mb-2">Odds History</h4>
+                                        <div class="bg-gray-50 border border-gray-200 rounded-md p-3 text-sm text-gray-500 text-center">
+                                            No odds history available
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endwith %}
+                    {% empty %}
+                        <div class="col-span-full text-center py-10">
+                            <p class="text-gray-500">No selections found for this event.</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% empty %}
+            <div class="text-center py-10">
+                <p class="text-gray-500">No bookmakers found in the system.</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab functionality
+    const tabs = document.querySelectorAll('.bookmaker-tab');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Remove active class from all tabs
+            tabs.forEach(t => {
+                t.classList.remove('active', 'bg-blue-100', 'text-primary');
+                t.classList.add('text-gray-500');
+            });
+            
+            // Add active class to clicked tab
+            tab.classList.add('active', 'bg-blue-100', 'text-primary');
+            tab.classList.remove('text-gray-500');
+            
+            // Hide all tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Show content for clicked tab
+            const tabId = tab.getAttribute('data-tab');
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+});
+</script>
+{% endblock %}

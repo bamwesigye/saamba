@@ -1,0 +1,25 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ betlink.league }} Details{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">{{ betlink.league }}</h1>
+        <div>
+            <a href="{% url 'core:betlink_update' betlink.pk %}" class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded mr-2 transition duration-300">Edit</a>
+            <a href="{% url 'core:betlink_delete' betlink.pk %}" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition duration-300">Delete</a>
+            <a href="{% url 'core:betlink_list' %}" class="text-gray-600 hover:text-primary ml-4">Back to List</a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
+        <p><strong class="font-semibold">League Code:</strong> {{ betlink.league_code }}</p>
+        <p><strong class="font-semibold">Country:</strong> {{ betlink.country }}</p>
+        <p><strong class="font-semibold">Level:</strong> {{ betlink.Level }}</p>
+        <p><strong class="font-semibold">Order:</strong> {{ betlink.order }}</p>
+        <p><strong class="font-semibold">Model Value:</strong> {{ betlink.model_value }}</p>
+        <p class="md:col-span-2"><strong class="font-semibold">Link URL:</strong> <a href="{{ betlink.link_url }}" target="_blank" class="text-primary hover:underline">{{ betlink.link_url }}</a></p>
+    </div>
+</div>
+{% endblock %}

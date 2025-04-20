@@ -34,7 +34,7 @@ class Command(BaseCommand):
             events_links =betpawa.get_event_urls(league.link_url)
             div_value = league.model_value            
             for event_link in events_links:
-                betpawa.get_over_model_prediction(event_link,div=div_value)
+                betpawa.get_statistics(event_link,div=div_value)
                 time.sleep(2)
         betpawa.create_code()
         betpawa.place_bet(20)

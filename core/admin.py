@@ -13,34 +13,43 @@ class BetpawaBetsAdmin(admin.ModelAdmin):
 @admin.register(BetLink)
 class BetLinkAdmin(ImportExportModelAdmin):
     list_display_links = ['league_code']
-    list_display = ['league_code','link_url','league','model_value','country', 'order','Level']
-    list_editable = ['league','country', 'order','Level','model_value']
+    list_display = ['league_code','link_url','league','country', 'order','Level']
+    list_editable = ['league','country', 'order','Level']
     search_fields = ['league','country']
     
 @admin.register(Selections)
 class SelectionsAdmin(admin.ModelAdmin):
-    pass
+    list_display = ['id','selection_code','selection','description']
+    list_filter = ['market']
 
 @admin.register(Market)
 class MarketAdmin(admin.ModelAdmin):
-    pass
+    list_display = ['id','market_name']
 
 @admin.register(Bookmakers)
 class BookmakersAdmin(admin.ModelAdmin):
-    pass
+    list_display = ['name', 'url']
 
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
-    pass
-
+    list_display = ['id','event_time', 'event_link', 'home_team', 'away_team', 'tournament']
+    list_filter = ['event_time', 'tournament']
+    
 @admin.register(EventSelection)
-class EventSelectionAdmin(admin.ModelAdmin):
-    pass
-
+class EventSelectionAdmin(admin.ModelAdmin):    
+    list_display = ['id','event', 'selection', 'get_market', 'is_settled', 'settled_at']
+    list_filter = ['event', 'is_settled', 'selection__market']
+    
+    def get_market(self, obj):
+        return obj.selection.market if obj.selection else None
+    
+    get_market.short_description = 'Market'
 
 @admin.register(EventOdds)
 class EventOddsAdmin(admin.ModelAdmin):
-    pass
+    list_display = ['id','event_selection', 'bookmaker', 'odd']
+    list_filter = ['event_selection', 'bookmaker']
+    list_editable = ['odd']
 
 @admin.register(PlacedBets)
 class PlacedBetsAdmin(admin.ModelAdmin):

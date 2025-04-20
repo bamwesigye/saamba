@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 
 
 class Market(models.Model):
-    market = models.CharField(_("Market Name"), max_length=50)
+    market_name = models.CharField(_("Market Name"), max_length=50)
 
     
 
@@ -13,7 +13,7 @@ class Market(models.Model):
         verbose_name_plural = _("Markets")
 
     def __str__(self):
-        return self.market
+        return self.market_name
 
     # def get_absolute_url(self):
     #     return reverse("Market_detail", kwargs={"pk": self.pk})
@@ -23,14 +23,14 @@ class Selections(models.Model):
     market = models.ForeignKey(Market, verbose_name=_("Market"), related_name='selections', on_delete=models.CASCADE)
     selection_code = models.CharField(_("Seclection Code"), max_length=50, unique=True)
     selection = models.CharField(_("Selection"), max_length=50)
-    desription = models.CharField(_("description"), max_length=50)   
+    description = models.CharField(_("description"), max_length=50)   
 
     class Meta:
         verbose_name = _("Selections")
-        verbose_name_plural = _("Selectionss")
+        verbose_name_plural = _("Market Selections")
 
     def __str__(self):
-        return self.name
+        return self.selection
 
     # def get_absolute_url(self):
     #     return reverse("Selections_detail", kwargs={"pk": self.pk})
@@ -38,6 +38,7 @@ class Selections(models.Model):
 class Bookmakers(models.Model):
 
     name = models.CharField(_(""), max_length=50)
+    url = models.URLField(_("url"), max_length=200)
 
     class Meta:
         verbose_name = _("Bookmaker")
@@ -57,8 +58,7 @@ class BetLink(models.Model):
     country = models.CharField(_("Country"), max_length=50)
     Level = models.CharField(_("Level"), max_length=50)
     order = models.FloatField(_("order"), default=2.0)
-    model_value = models.IntegerField(_("model_value"), default=0)
-
+    bookmaker = models.ForeignKey(Bookmakers, verbose_name=_("bookmaker"), on_delete=models.SET_NULL, blank=True, null=True)
     class Meta:
         ordering = ['league_code']
         verbose_name = _("Betlink")
@@ -72,8 +72,9 @@ class BetLink(models.Model):
 
 class Event(models.Model):
     event_link = models.URLField(_("event link"), max_length=200, unique=True)
-    event_time = models.CharField(_("event time"), max_length=50)
-    event_particpants = models.CharField(_(""), max_length=100)
+    event_time = models.DateTimeField(_("event time"))
+    home_team = models.CharField(_("Home Team"), max_length=100)
+    away_team = models.CharField(_("Away Team"), max_length=100)
     tournament = models.CharField(_("Tournament"), max_length=50)    
 
     class Meta:
@@ -81,7 +82,7 @@ class Event(models.Model):
         verbose_name_plural = _("Events")
 
     def __str__(self):
-        return self.name
+        return f'{self.event_time} - {self.home_team} vs {self.away_team}'
 
     # def get_absolute_url(self):
     #     return reverse("Events_detail", kwargs={"pk": self.pk})
@@ -90,28 +91,31 @@ class Event(models.Model):
 class EventSelection(models.Model):
     event = models.ForeignKey(Event,verbose_name=_(""), related_name='event_selections', on_delete=models.CASCADE)
     selection = models.ForeignKey(Selections, verbose_name=_(""), on_delete=models.CASCADE)
+    is_settled = models.BooleanField(default=False)
+    settled_at = models.DateTimeField(null=True, blank=True)
     class Meta:
         verbose_name = _("EventSelection")
         verbose_name_plural = _("EventSelections")
 
     def __str__(self):
-        return self.event
+        return f'{self.event} - {self.selection}'
 
     # def get_absolute_url(self):
     #     return reverse("EventSelection_detail", kwargs={"pk": self.pk})
 
 class EventOdds(models.Model):
     event_selection = models.ForeignKey(EventSelection, verbose_name=_(""), on_delete=models.CASCADE)
-    entered_at = models.DateTimeField(_("Time Entered"), auto_now=False, auto_now_add=True)
+    bookmaker = models.ForeignKey(Bookmakers, verbose_name=_("bookmaker"), on_delete=models.SET_NULL, blank=True, null=True)
     odd = models.DecimalField(_("Odds Value"), max_digits=5, decimal_places=3)
+    entered_at = models.DateTimeField(_("Time Entered"), auto_now=False, auto_now_add=True)
     
 
     class Meta:
         verbose_name = _("EventOdds")
-        verbose_name_plural = _("EventOddss")
+        verbose_name_plural = _("EventOdds")
 
     def __str__(self):
-        return self.name
+        return f'{self.event_selection} - {self.bookmaker} - {self.odd}'
 
     # def get_absolute_url(self):
     #     return reverse("EventOdds_detail", kwargs={"pk": self.pk})

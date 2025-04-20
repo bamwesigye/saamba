@@ -1,0 +1,53 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{% if object %}Edit {{ object.market }}{% else %}Add New Market{% endif %}{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold text-gray-800 mb-6">{% if object %}Edit {{ object.market }}{% else %}Add New Market{% endif %}</h1>
+
+<div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+    <form method="post">
+        {% csrf_token %}
+
+        {% comment %} Render form fields dynamically {% endcomment %}
+        {% for field in form %}
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ field.id_for_label }}">
+                {{ field.label }}
+            </label>
+            {% if field.field.widget.input_type == 'select' %}
+                <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline {% if field.errors %}border-red-500{% endif %}" 
+                       id="{{ field.id_for_label }}" 
+                       name="{{ field.html_name }}">
+                    {% for value, text in field.field.choices %}
+                        <option value="{{ value }}" {% if field.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>{{ text }}</option>
+                    {% endfor %}
+                </select>
+            {% else %}
+                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline {% if field.errors %}border-red-500{% endif %}" 
+                       id="{{ field.id_for_label }}" 
+                       name="{{ field.html_name }}" 
+                       type="{{ field.field.widget.input_type }}" 
+                       value="{{ field.value|default_if_none:'' }}" 
+                       {% if field.field.required %}required{% endif %}>
+            {% endif %}
+            {% if field.errors %}
+                <p class="text-red-500 text-xs italic">{{ field.errors|striptags }}</p>
+            {% endif %}
+            {% if field.help_text %}
+                <p class="text-gray-600 text-xs italic">{{ field.help_text|safe }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="flex items-center justify-between mt-6">
+            <button class="bg-primary hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300" type="submit">
+                Save Market
+            </button>
+            <a href="{% if object %}{% url 'core:market_detail' object.pk %}{% else %}{% url 'core:market_list' %}{% endif %}" class="inline-block align-baseline font-bold text-sm text-gray-600 hover:text-primary">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

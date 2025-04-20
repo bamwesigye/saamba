@@ -12,6 +12,7 @@
 betcodes/
 myenv/
 saamba_env/
+samba_env/
 data/
 *.csv
 

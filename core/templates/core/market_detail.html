@@ -1,0 +1,21 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ market.market }} Details{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">{{ market.market }}</h1>
+        <div>
+            <a href="{% url 'core:market_update' market.pk %}" class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded mr-2 transition duration-300">Edit</a>
+            <a href="{% url 'core:market_delete' market.pk %}" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition duration-300">Delete</a>
+            <a href="{% url 'core:market_list' %}" class="text-gray-600 hover:text-primary ml-4">Back to List</a>
+        </div>
+    </div>
+
+    <div class="text-gray-700">
+        <p><strong class="font-semibold">Market Name:</strong> {{ market.market }}</p>
+        <!-- Add other fields from Market model if any -->
+    </div>
+</div>
+{% endblock %}

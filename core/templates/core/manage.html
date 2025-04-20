@@ -1,0 +1,66 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Saamba Management{% endblock %}
+
+{% block content %}
+<div class="text-center py-12 px-4">
+    <h1 class="text-4xl font-bold text-primary mb-4">Saamba Management</h1>
+    <p class="text-xl text-gray-700 mb-8">Manage Your Bet Automation Settings</p>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Card for Markets -->
+        <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-3">Manage Markets</h2>
+            <p class="text-gray-600 mb-4">Define the types of betting markets available.</p>
+            <a href="{% url 'core:market_list' %}" class="inline-block bg-secondary hover:bg-pink-700 text-white font-bold py-2 px-4 rounded transition duration-300">
+                Go to Markets
+            </a>
+        </div>
+
+        <!-- Card for Selections -->
+        <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-3">Manage Selections</h2>
+            <p class="text-gray-600 mb-4">Manage specific selections within each market.</p>
+            <a href="{% url 'core:selections_list' %}" class="inline-block bg-accent hover:bg-amber-700 text-white font-bold py-2 px-4 rounded transition duration-300">
+                Go to Selections
+            </a>
+        </div>
+
+        <!-- Card for BetLinks -->
+        <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-3">Manage Bet Links</h2>
+            <p class="text-gray-600 mb-4">Add, view, edit, and delete betting league links.</p>
+            <a href="{% url 'core:betlink_list' %}" class="inline-block bg-primary hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300">
+                Go to Bet Links
+            </a>
+        </div>
+        
+        <!-- Card for Events -->
+        <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-3">Manage Events</h2>
+            <p class="text-gray-600 mb-4">Browse and manage all events and their details.</p>
+            <a href="{% url 'core:event_list' %}" class="inline-block bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-300">
+                Go to Events
+            </a>
+        </div>
+        
+        <!-- Card for Bookmakers -->
+        <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-3">Bookmakers</h2>
+            <p class="text-gray-600 mb-4">Manage bookmakers in the system.</p>
+            <a href="/admin/core/bookmakers/" class="inline-block bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition duration-300">
+                Manage Bookmakers
+            </a>
+        </div>
+        
+        <!-- Admin Link -->
+        <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-3">Django Admin</h2>
+            <p class="text-gray-600 mb-4">Access the Django admin interface for advanced management.</p>
+            <a href="/admin/" class="inline-block bg-neutral hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition duration-300">
+                Go to Admin
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
