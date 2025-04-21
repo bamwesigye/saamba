@@ -1,0 +1,351 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Enter Scores - {{ event.home_team }} vs {{ event.away_team }} - Saamba{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow-md rounded-lg overflow-hidden">
+    <div class="p-4 md:p-6 bg-gradient-to-r from-green-600 to-green-800 text-white">
+        <h1 class="text-2xl md:text-3xl font-bold">Enter Match Scores</h1>
+        <p class="text-sm md:text-base mt-2">{{ event.home_team }} vs {{ event.away_team }}</p>
+        <p class="text-sm text-green-100">{{ event.tournament }} | {{ event.event_time|date:"d M Y H:i" }}</p>
+    </div>
+
+    <div class="p-4 md:p-6">
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="p-4 mb-2 {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %} rounded-md">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'core:event_score_entry' event.id %}">
+            {% csrf_token %}
+            
+            <div class="mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <div class="text-lg font-medium text-center mb-4">Teams</div>
+                        <div class="bg-gray-100 rounded-lg p-4 flex flex-col items-center">
+                            <div class="text-base font-semibold mb-2">{{ event.home_team }}</div>
+                            <div class="text-xs text-gray-600 mb-4">Home Team</div>
+                            
+                            <div class="text-base font-semibold mb-2">{{ event.away_team }}</div>
+                            <div class="text-xs text-gray-600">Away Team</div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="text-lg font-medium text-center mb-4">Half Time</div>
+                        <div class="bg-gray-100 rounded-lg p-4 flex flex-col items-center">
+                            <div class="mb-4">
+                                <label for="id_hthg" class="block text-xs text-gray-600 mb-1">Home Team Goals</label>
+                                <input type="number" name="hthg" id="id_hthg" value="{{ form.hthg.value|default:0 }}" min="0" 
+                                    class="w-20 text-center rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50">
+                                {% if form.hthg.errors %}
+                                    <div class="text-red-500 text-xs mt-1">{{ form.hthg.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                <label for="id_htag" class="block text-xs text-gray-600 mb-1">Away Team Goals</label>
+                                <input type="number" name="htag" id="id_htag" value="{{ form.htag.value|default:0 }}" min="0" 
+                                    class="w-20 text-center rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50">
+                                {% if form.htag.errors %}
+                                    <div class="text-red-500 text-xs mt-1">{{ form.htag.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="text-lg font-medium text-center mb-4">Full Time</div>
+                        <div class="bg-gray-100 rounded-lg p-4 flex flex-col items-center">
+                            <div class="mb-4">
+                                <label for="id_fthg" class="block text-xs text-gray-600 mb-1">Home Team Goals</label>
+                                <input type="number" name="fthg" id="id_fthg" value="{{ form.fthg.value|default:0 }}" min="0" 
+                                    class="w-20 text-center rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50">
+                                {% if form.fthg.errors %}
+                                    <div class="text-red-500 text-xs mt-1">{{ form.fthg.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                <label for="id_ftag" class="block text-xs text-gray-600 mb-1">Away Team Goals</label>
+                                <input type="number" name="ftag" id="id_ftag" value="{{ form.ftag.value|default:0 }}" min="0" 
+                                    class="w-20 text-center rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50">
+                                {% if form.ftag.errors %}
+                                    <div class="text-red-500 text-xs mt-1">{{ form.ftag.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% if form.non_field_errors %}
+                <div class="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <div class="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-6">
+                <h3 class="text-lg font-medium text-yellow-800 mb-2">Selection Settlement Preview</h3>
+                <p class="text-sm text-yellow-600 mb-4">
+                    Based on the scores entered, the following selections will be settled:
+                </p>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-yellow-200">
+                        <thead>
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Market</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 uppercase tracking-wider">Selection</th>
+                                <th class="px-4 py-2 text-right text-xs font-medium text-yellow-700 uppercase tracking-wider">Outcome</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-yellow-200">
+                            {% for selection in event.event_selections.all %}
+                                <tr id="selection-{{ selection.id }}" class="hover:bg-yellow-100">
+                                    <td class="px-4 py-2 text-sm text-yellow-800">{{ selection.selection.market.market_name }}</td>
+                                    <td class="px-4 py-2 text-sm text-yellow-800">{{ selection.selection.description }}</td>
+                                    <td class="px-4 py-2 text-sm text-right outcome-cell">
+                                        <span class="outcome-pending inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                            Pending
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <p class="text-sm text-yellow-600 mt-4">
+                    <span class="font-medium">Note:</span> Settlement will only occur when you confirm the scores by checking the box below.
+                </p>
+            </div>
+            
+            <div class="mb-6">
+                <label class="flex items-center">
+                    <input type="checkbox" name="confirm_scores" id="id_confirm_scores" 
+                        class="rounded border-gray-300 text-green-600 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50 h-5 w-5">
+                    <span class="ml-2 text-sm text-gray-700">{{ form.confirm_scores.label }}</span>
+                </label>
+                <p class="text-xs text-gray-500 mt-1">
+                    Check this box to confirm the scores as final and to automatically settle all selections.
+                </p>
+            </div>
+            
+            <div class="flex justify-between">
+                <a href="{% url 'core:completed_event_list' %}" 
+                    class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded transition-colors">
+                    Back to List
+                </a>
+                
+                <button type="submit" 
+                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded transition-colors">
+                    Save Scores
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get all score input fields
+        const scoreInputs = [
+            document.getElementById('id_hthg'),
+            document.getElementById('id_htag'),
+            document.getElementById('id_fthg'),
+            document.getElementById('id_ftag')
+        ];
+        
+        // Function to update the outcome preview based on current scores
+        function updateOutcomePreview() {
+            const hthg = parseInt(document.getElementById('id_hthg').value) || 0;
+            const htag = parseInt(document.getElementById('id_htag').value) || 0;
+            const fthg = parseInt(document.getElementById('id_fthg').value) || 0;
+            const ftag = parseInt(document.getElementById('id_ftag').value) || 0;
+            
+            // Get all selection rows
+            const selectionRows = document.querySelectorAll('[id^="selection-"]');
+            
+            selectionRows.forEach(row => {
+                const marketCell = row.querySelector('td:nth-child(1)');
+                const selectionCell = row.querySelector('td:nth-child(2)');
+                const outcomeCell = row.querySelector('.outcome-cell');
+                
+                const market = marketCell.textContent.trim();
+                const selection = selectionCell.textContent.trim();
+                
+                let outcome = 'Pending';
+                let outcomeClass = 'bg-gray-100 text-gray-800';
+                
+                // 1X2 Market logic
+                if (market === '1X2') {
+                    if (selection === '1') {
+                        if (fthg > ftag) {
+                            outcome = 'Won';
+                            outcomeClass = 'bg-green-100 text-green-800';
+                        } else {
+                            outcome = 'Lost';
+                            outcomeClass = 'bg-red-100 text-red-800';
+                        }
+                    } else if (selection === 'X') {
+                        if (fthg === ftag) {
+                            outcome = 'Won';
+                            outcomeClass = 'bg-green-100 text-green-800';
+                        } else {
+                            outcome = 'Lost';
+                            outcomeClass = 'bg-red-100 text-red-800';
+                        }
+                    } else if (selection === '2') {
+                        if (fthg < ftag) {
+                            outcome = 'Won';
+                            outcomeClass = 'bg-green-100 text-green-800';
+                        } else {
+                            outcome = 'Lost';
+                            outcomeClass = 'bg-red-100 text-red-800';
+                        }
+                    }
+                }
+                // Over/Under Market logic
+                else if (market.startsWith('Over/Under')) {
+                    const thresholdStr = market.split(' ').pop();
+                    const threshold = parseFloat(thresholdStr);
+                    const totalGoals = fthg + ftag;
+                    
+                    if (selection.toLowerCase() === 'over') {
+                        if (totalGoals > threshold) {
+                            outcome = 'Won';
+                            outcomeClass = 'bg-green-100 text-green-800';
+                        } else {
+                            outcome = 'Lost';
+                            outcomeClass = 'bg-red-100 text-red-800';
+                        }
+                    } else if (selection.toLowerCase() === 'under') {
+                        if (totalGoals < threshold) {
+                            outcome = 'Won';
+                            outcomeClass = 'bg-green-100 text-green-800';
+                        } else {
+                            outcome = 'Lost';
+                            outcomeClass = 'bg-red-100 text-red-800';
+                        }
+                    }
+                }
+                // BTTS Market logic
+                else if (market === 'BTTS') {
+                    const bothTeamsScored = fthg > 0 && ftag > 0;
+                    
+                    if (selection.toLowerCase() === 'yes') {
+                        if (bothTeamsScored) {
+                            outcome = 'Won';
+                            outcomeClass = 'bg-green-100 text-green-800';
+                        } else {
+                            outcome = 'Lost';
+                            outcomeClass = 'bg-red-100 text-red-800';
+                        }
+                    } else if (selection.toLowerCase() === 'no') {
+                        if (!bothTeamsScored) {
+                            outcome = 'Won';
+                            outcomeClass = 'bg-green-100 text-green-800';
+                        } else {
+                            outcome = 'Lost';
+                            outcomeClass = 'bg-red-100 text-red-800';
+                        }
+                    }
+                }
+                // Double Chance Market logic
+                else if (market === 'Double Chance') {
+                    if (selection === '1X') {
+                        if (fthg >= ftag) {
+                            outcome = 'Won';
+                            outcomeClass = 'bg-green-100 text-green-800';
+                        } else {
+                            outcome = 'Lost';
+                            outcomeClass = 'bg-red-100 text-red-800';
+                        }
+                    } else if (selection === '12') {
+                        if (fthg !== ftag) {
+                            outcome = 'Won';
+                            outcomeClass = 'bg-green-100 text-green-800';
+                        } else {
+                            outcome = 'Lost';
+                            outcomeClass = 'bg-red-100 text-red-800';
+                        }
+                    } else if (selection === 'X2') {
+                        if (fthg <= ftag) {
+                            outcome = 'Won';
+                            outcomeClass = 'bg-green-100 text-green-800';
+                        } else {
+                            outcome = 'Lost';
+                            outcomeClass = 'bg-red-100 text-red-800';
+                        }
+                    }
+                }
+                // HT Result Market logic
+                else if (market === 'HT Result') {
+                    if (selection === '1') {
+                        if (hthg > htag) {
+                            outcome = 'Won';
+                            outcomeClass = 'bg-green-100 text-green-800';
+                        } else {
+                            outcome = 'Lost';
+                            outcomeClass = 'bg-red-100 text-red-800';
+                        }
+                    } else if (selection === 'X') {
+                        if (hthg === htag) {
+                            outcome = 'Won';
+                            outcomeClass = 'bg-green-100 text-green-800';
+                        } else {
+                            outcome = 'Lost';
+                            outcomeClass = 'bg-red-100 text-red-800';
+                        }
+                    } else if (selection === '2') {
+                        if (hthg < htag) {
+                            outcome = 'Won';
+                            outcomeClass = 'bg-green-100 text-green-800';
+                        } else {
+                            outcome = 'Lost';
+                            outcomeClass = 'bg-red-100 text-red-800';
+                        }
+                    }
+                }
+                // Correct Score Market logic
+                else if (market === 'Correct Score') {
+                    const actualScore = `${fthg}-${ftag}`;
+                    
+                    if (selection === actualScore) {
+                        outcome = 'Won';
+                        outcomeClass = 'bg-green-100 text-green-800';
+                    } else {
+                        outcome = 'Lost';
+                        outcomeClass = 'bg-red-100 text-red-800';
+                    }
+                }
+                
+                // Update the outcome cell
+                outcomeCell.innerHTML = `
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${outcomeClass}">
+                        ${outcome}
+                    </span>
+                `;
+            });
+        }
+        
+        // Add event listeners to all score inputs
+        scoreInputs.forEach(input => {
+            input.addEventListener('change', updateOutcomePreview);
+            input.addEventListener('keyup', updateOutcomePreview);
+        });
+        
+        // Run once on page load
+        updateOutcomePreview();
+    });
+</script>
+{% endblock %}

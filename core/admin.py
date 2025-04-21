@@ -37,8 +37,8 @@ class EventAdmin(admin.ModelAdmin):
     
 @admin.register(EventSelection)
 class EventSelectionAdmin(admin.ModelAdmin):    
-    list_display = ['id','event', 'selection', 'get_market', 'is_settled', 'settled_at']
-    list_filter = ['event', 'is_settled', 'selection__market']
+    list_display = ['id','event', 'get_market', 'selection', 'status', 'settled_at']
+    list_filter = ['status','event',  'selection__market']
     
     def get_market(self, obj):
         return obj.selection.market if obj.selection else None

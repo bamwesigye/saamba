@@ -1,14 +1,18 @@
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.db.models import Q
+from django.utils import timezone
 from .models import BetLink, Market, Selections, Event, EventSelection, EventOdds, Bookmakers
+from .forms import EventOddsForm, ScoreEntryForm
+from .settlement import process_selections
 
 # Create your views here.
 
 # Home View
 def home(request):
-    # Start with all events ordered by event_time
-    queryset = Event.objects.all().order_by('event_time')
+    # Start with all future events ordered by event_time
+    queryset = Event.objects.filter(event_time__gt=timezone.now()).order_by('event_time')
     
     # Get search and filter parameters from GET request
     search_query = request.GET.get('search', '')
@@ -126,16 +130,9 @@ class BetLinkDeleteView(DeleteView):
 
 
 # Event Views
-from django.forms import ModelForm, HiddenInput
 from django.shortcuts import redirect, get_object_or_404
 from django.contrib import messages
-from django.db.models import Prefetch, Max, F, Q
-from django.utils import timezone
-
-# Manage View
-def manage(request):
-    # Simple view for management links
-    return render(request, 'core/manage.html')
+from django.db.models import Prefetch, Max, F
 
 class EventListView(ListView):
     model = Event
@@ -144,7 +141,8 @@ class EventListView(ListView):
     paginate_by = 20  # Add pagination for better performance with large datasets
     
     def get_queryset(self):
-        queryset = Event.objects.all().order_by('event_time')
+        # Show only future events
+        queryset = Event.objects.filter(event_time__gt=timezone.now()).order_by('event_time')
         
         # Get search and filter parameters from GET request
         search_query = self.request.GET.get('search', '')
@@ -176,14 +174,56 @@ class EventListView(ListView):
         
         return context
 
-class EventOddsForm(ModelForm):
-    class Meta:
-        model = EventOdds
-        fields = ['event_selection', 'bookmaker', 'odd']
-        widgets = {
-            'event_selection': HiddenInput(),
-            'bookmaker': HiddenInput(),
-        }
+class CompletedEventListView(ListView):
+    model = Event
+    context_object_name = 'events'
+    template_name = 'core/completed_event_list.html'
+    paginate_by = 20
+    
+    def get_queryset(self):
+        # Get events where event_time is in the past
+        queryset = Event.objects.filter(
+            event_time__lt=timezone.now()
+        ).order_by('-event_time')  # Most recent completed events first
+        
+        # Get search and filter parameters from GET request
+        search_query = self.request.GET.get('search', '')
+        tournament = self.request.GET.get('tournament', '')
+        settled_status = self.request.GET.get('settled', '')
+        
+        # Apply search filter if provided
+        if search_query:
+            queryset = queryset.filter(
+                Q(home_team__icontains=search_query) | 
+                Q(away_team__icontains=search_query) |
+                Q(tournament__icontains=search_query)
+            )
+        
+        # Apply tournament filter if provided
+        if tournament:
+            queryset = queryset.filter(tournament=tournament)
+            
+        # Apply scores_confirmed filter if provided
+        if settled_status:
+            if settled_status == 'confirmed':
+                queryset = queryset.filter(scores_confirmed=True)
+            elif settled_status == 'pending':
+                queryset = queryset.filter(scores_confirmed=False)
+                
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Add unique tournaments for the filter dropdown
+        context['tournaments'] = Event.objects.values_list('tournament', flat=True).distinct().order_by('tournament')
+        
+        # Add current filters to context for form persistence
+        context['current_search'] = self.request.GET.get('search', '')
+        context['current_tournament'] = self.request.GET.get('tournament', '')
+        context['current_settled'] = self.request.GET.get('settled', '')
+        
+        return context
 
 class EventDetailView(DetailView):
     model = Event
@@ -194,6 +234,9 @@ class EventDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         event = self.object
         
+        # Check if the event has started (odds updates should not be allowed)
+        context['event_started'] = event.event_time <= timezone.now()
+        
         # Get all bookmakers
         bookmakers = Bookmakers.objects.all()
         context['bookmakers'] = bookmakers
@@ -203,6 +246,16 @@ class EventDetailView(DetailView):
         
         # For each selection, get odds history grouped by bookmaker
         selections_with_odds = []
+        
+        # Get unique markets for this event
+        unique_markets = list(set([es.selection.market for es in event_selections]))
+        unique_markets.sort(key=lambda m: m.id)  # Sort markets by ID
+        context['markets'] = unique_markets
+        
+        # Group selections by market
+        selections_by_market = {}
+        for market in unique_markets:
+            selections_by_market[market.id] = []
         
         for selection in event_selections:
             # Get all odds for this selection
@@ -218,16 +271,26 @@ class EventDetailView(DetailView):
                     'form': EventOddsForm(initial={'event_selection': selection, 'bookmaker': bookmaker}),
                 }
             
-            selections_with_odds.append({
+            selection_data = {
                 'selection': selection,
                 'bookmaker_odds': bookmaker_odds,
-            })
+            }
+            
+            # Add to both flat list and market-grouped dictionary
+            selections_with_odds.append(selection_data)
+            selections_by_market[selection.selection.market.id].append(selection_data)
         
         context['selections_with_odds'] = selections_with_odds
+        context['selections_by_market'] = selections_by_market
         return context
     
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
+        
+        # Prevent odds updates for events that have already started
+        if self.object.event_time <= timezone.now():
+            messages.error(request, 'Cannot update odds for events that have already started!')
+            return redirect('core:event_detail', pk=self.object.pk)
         
         # Process the form submission for updating odds
         form = EventOddsForm(request.POST)
@@ -238,3 +301,90 @@ class EventDetailView(DetailView):
             messages.error(request, 'Error updating odds!')
             
         return redirect('core:event_detail', pk=self.object.pk)
+
+# Score Entry Form
+from django.forms import Form, IntegerField, BooleanField, ValidationError
+
+class ScoreEntryForm(Form):
+    hthg = IntegerField(label='Home Team - Half Time', required=True, min_value=0)
+    htag = IntegerField(label='Away Team - Half Time', required=True, min_value=0)
+    fthg = IntegerField(label='Home Team - Full Time', required=True, min_value=0)
+    ftag = IntegerField(label='Away Team - Full Time', required=True, min_value=0)
+    confirm_scores = BooleanField(label='Confirm Scores and Settle Selections', required=False)
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        # Validate that full-time scores are consistent with half-time scores
+        hthg = cleaned_data.get('hthg')
+        htag = cleaned_data.get('htag')
+        fthg = cleaned_data.get('fthg')
+        ftag = cleaned_data.get('ftag')
+        
+        if hthg is not None and htag is not None and fthg is not None and ftag is not None:
+            if fthg < hthg:
+                raise ValidationError("Full-time home goals cannot be less than half-time home goals")
+            if ftag < htag:
+                raise ValidationError("Full-time away goals cannot be less than half-time away goals")
+        
+        return cleaned_data
+
+# Event Score Entry View
+def event_score_entry(request, pk):
+    event = get_object_or_404(Event, pk=pk)
+    
+    # Check if event is in the past
+    if event.event_time > timezone.now():
+        messages.error(request, "Cannot enter scores for future events")
+        return redirect('core:completed_event_list')
+    
+    if request.method == 'POST':
+        form = ScoreEntryForm(request.POST)
+        
+        if form.is_valid():
+            # Update event scores
+            event.hthg = form.cleaned_data['hthg']
+            event.htag = form.cleaned_data['htag']
+            event.fthg = form.cleaned_data['fthg']
+            event.ftag = form.cleaned_data['ftag']
+            
+            # Only mark as confirmed if checkbox is checked
+            if form.cleaned_data['confirm_scores']:
+                event.scores_confirmed = True
+            else:
+                messages.success(request, f"Scores saved for {event.home_team} vs {event.away_team} but not confirmed yet")
+            
+            # Save the event with the updated scores first
+            event.save()
+            
+            # Process selections if scores are confirmed
+            if event.scores_confirmed:
+                # Force refresh from database to ensure we have the latest event data
+                event.refresh_from_db()
+                settlement_results = process_selections(event)
+                messages.success(request, f"Scores confirmed and selections settled for {event.home_team} vs {event.away_team}.")
+            
+            return redirect('core:completed_event_list')
+    else:
+        # Pre-populate with existing scores if available
+        initial_data = {}
+        if event.hthg is not None:
+            initial_data['hthg'] = event.hthg
+        if event.htag is not None:
+            initial_data['htag'] = event.htag
+        if event.fthg is not None:
+            initial_data['fthg'] = event.fthg
+        if event.ftag is not None:
+            initial_data['ftag'] = event.ftag
+            
+        form = ScoreEntryForm(initial=initial_data)
+    
+    context = {
+        'event': event,
+        'form': form,
+    }
+    
+    return render(request, 'core/event_score_entry.html', context)
+
+def manage(request):
+    # Simple view for management links
+    return render(request, 'core/manage.html')

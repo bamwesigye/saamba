@@ -31,5 +31,8 @@ urlpatterns = [
 
     # Event URLs
     path('events/', views.EventListView.as_view(), name='event_list'),
+    # Completed Events URL (for score entry) - needs to be before the detail view to avoid conflicts
+    path('events/completed/', views.CompletedEventListView.as_view(), name='completed_event_list'),
+    path('events/<int:pk>/scores/', views.event_score_entry, name='event_score_entry'),
     path('events/<int:pk>/', views.EventDetailView.as_view(), name='event_detail'),
 ]

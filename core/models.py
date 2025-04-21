@@ -28,6 +28,7 @@ class Selections(models.Model):
     class Meta:
         verbose_name = _("Selections")
         verbose_name_plural = _("Market Selections")
+        ordering = ['id']
 
     def __str__(self):
         return self.selection
@@ -75,7 +76,13 @@ class Event(models.Model):
     event_time = models.DateTimeField(_("event time"))
     home_team = models.CharField(_("Home Team"), max_length=100)
     away_team = models.CharField(_("Away Team"), max_length=100)
-    tournament = models.CharField(_("Tournament"), max_length=50)    
+    tournament = models.CharField(_("Tournament"), max_length=50)
+    hthg = models.IntegerField(_("Half Time Home Team Goals"), blank=True, null=True)
+    htag = models.IntegerField(_("Half Time Away Team Goals"), blank=True, null=True)
+    fthg = models.IntegerField(_("Full Time Home Team Goals"), blank=True, null=True)
+    ftag = models.IntegerField(_("Full Time Away Team Goals"), blank=True, null=True)
+    scores_confirmed = models.BooleanField(_("Scores Confirmed"), default=False)
+    
 
     class Meta:
         verbose_name = _("Events")
@@ -89,8 +96,16 @@ class Event(models.Model):
 
 
 class EventSelection(models.Model):
+    # add status choices are PENDING won lost or void
+    STATUS_CHOICES = (
+        ('P', 'Pending'),
+        ('W', 'Won'),
+        ('L', 'Lost'),
+        ('V', 'Void'),
+    )
     event = models.ForeignKey(Event,verbose_name=_(""), related_name='event_selections', on_delete=models.CASCADE)
     selection = models.ForeignKey(Selections, verbose_name=_(""), on_delete=models.CASCADE)
+    status = models.CharField(max_length=1, choices=STATUS_CHOICES, default='P')
     is_settled = models.BooleanField(default=False)
     settled_at = models.DateTimeField(null=True, blank=True)
     class Meta:

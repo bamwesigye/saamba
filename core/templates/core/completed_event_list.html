@@ -1,0 +1,225 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Completed Events - Saamba{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow-md rounded-lg overflow-hidden">
+    <div class="p-4 md:p-6 bg-gradient-to-r from-green-600 to-green-800 text-white">
+        <h1 class="text-2xl md:text-3xl font-bold">Completed Events</h1>
+        <p class="text-sm md:text-base mt-2">Enter match results and settle selections</p>
+    </div>
+
+    <!-- Search and Filter Form -->
+    <div class="p-4 md:p-6 bg-gray-50 border-b">
+        <form method="get" action="{% url 'core:completed_event_list' %}" class="flex flex-col md:flex-row gap-4">
+            <div class="flex-1">
+                <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search Teams or Tournament</label>
+                <input type="text" name="search" id="search" value="{{ current_search }}" 
+                    placeholder="Search..."
+                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50 py-2 px-3">
+            </div>
+            
+            <div class="w-full md:w-1/4">
+                <label for="tournament" class="block text-sm font-medium text-gray-700 mb-1">Tournament</label>
+                <select name="tournament" id="tournament" 
+                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50 py-2 px-3">
+                    <option value="">All Tournaments</option>
+                    {% for tournament in tournaments %}
+                        <option value="{{ tournament }}" {% if tournament == current_tournament %}selected{% endif %}>
+                            {{ tournament }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="w-full md:w-1/4">
+                <label for="settled" class="block text-sm font-medium text-gray-700 mb-1">Settlement Status</label>
+                <select name="settled" id="settled" 
+                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50 py-2 px-3">
+                    <option value="">All Events</option>
+                    <option value="pending" {% if current_settled == 'pending' %}selected{% endif %}>Pending Results</option>
+                    <option value="confirmed" {% if current_settled == 'confirmed' %}selected{% endif %}>Results Confirmed</option>
+                </select>
+            </div>
+            
+            <div class="flex items-end">
+                <button type="submit" 
+                    class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-md transition-colors">
+                    Filter
+                </button>
+                
+                {% if current_search or current_tournament or current_settled %}
+                    <a href="{% url 'core:completed_event_list' %}" 
+                        class="ml-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-md transition-colors">
+                        Clear
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <div class="p-4 md:p-6">
+        {% if events %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tournament</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for event in events %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">{{ event.home_team }} vs {{ event.away_team }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-500">{{ event.tournament }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-500">{{ event.event_time|date:"d M Y H:i" }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if event.scores_confirmed %}
+                                        <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                            <span class="font-bold">{{ event.fthg|default:"0" }} - {{ event.ftag|default:"0" }}</span>
+                                            {% if event.hthg is not None and event.htag is not None %}
+                                                <span class="ml-1 text-xs text-gray-500">(HT: {{ event.hthg }} - {{ event.htag }})</span>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                                            Pending
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if event.scores_confirmed %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            Confirmed
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                            Needs Score
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <a href="{% url 'core:event_detail' event.id %}" class="text-blue-600 hover:text-blue-900 mr-3">View</a>
+                                    {% if not event.scores_confirmed %}
+                                        <a href="{% url 'core:event_score_entry' event.id %}" class="text-green-600 hover:text-green-900">Enter Scores</a>
+                                    {% else %}
+                                        <a href="{% url 'core:event_score_entry' event.id %}" class="text-gray-600 hover:text-gray-900">Edit Scores</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            <div class="mt-6 flex justify-center">
+                <nav class="inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}{% if current_search %}&search={{ current_search }}{% endif %}{% if current_tournament %}&tournament={{ current_tournament }}{% endif %}{% if current_settled %}&settled={{ current_settled }}{% endif %}" 
+                           class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <span class="sr-only">Previous</span>
+                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </a>
+                    {% else %}
+                        <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400">
+                            <span class="sr-only">Previous</span>
+                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </span>
+                    {% endif %}
+                    
+                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+                    
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if current_search %}&search={{ current_search }}{% endif %}{% if current_tournament %}&tournament={{ current_tournament }}{% endif %}{% if current_settled %}&settled={{ current_settled }}{% endif %}" 
+                           class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <span class="sr-only">Next</span>
+                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </a>
+                    {% else %}
+                        <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400">
+                            <span class="sr-only">Next</span>
+                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </span>
+                    {% endif %}
+                </nav>
+            </div>
+        {% else %}
+            <div class="py-10 text-center">
+                <p class="text-gray-500">No completed events found.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Placeholder for score entry modal - this will be implemented fully in the next step -->
+<div id="score-entry-modal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4">
+        <div class="px-6 py-4 border-b">
+            <h3 class="text-lg font-medium text-gray-900">Enter Match Scores</h3>
+        </div>
+        <div class="p-6">
+            <p class="text-center text-gray-700 mb-4">Score entry form will be implemented in the next step</p>
+            <div class="mt-6 flex justify-end">
+                <button type="button" class="close-modal bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded mr-2">
+                    Cancel
+                </button>
+                <button type="button" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded">
+                    Save Scores
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Simple modal functionality - will be enhanced in the next step
+    document.addEventListener('DOMContentLoaded', function() {
+        const openButtons = document.querySelectorAll('.enter-scores');
+        const modal = document.getElementById('score-entry-modal');
+        const closeButtons = document.querySelectorAll('.close-modal');
+        
+        openButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const eventId = this.getAttribute('data-event-id');
+                modal.classList.remove('hidden');
+            });
+        });
+        
+        closeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                modal.classList.add('hidden');
+            });
+        });
+        
+        // Close when clicking outside
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+            }
+        });
+    });
+</script>
+{% endblock %}
